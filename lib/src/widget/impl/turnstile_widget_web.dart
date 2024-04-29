@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_web_libraries_in_flutter
+
 import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:ui_web' as ui;
@@ -7,30 +9,83 @@ import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_we
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import '../interface.dart' as base;
+import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
-class CloudFlareTurnstile extends StatefulWidget implements base.CloudFlareTurnstile {
+class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+  /// This [siteKey] is associated with the corresponding widget configuration
+  /// and is created upon the widget creation.
+  ///
+  /// It`s likely generated or obtained from the CloudFlare dashboard.
   @override
   final String siteKey;
 
+  /// A Turnstile widget options
   @override
   final TurnstileOptions options;
 
+  /// A base url of turnstile Site
+  @override
+  final String baseUrl;
+
+  /// A controller for an Turnstile widget
   @override
   final TurnstileController? controller;
 
+  /// A Callback invoked upon success of the challange.
+  /// The callback is passed a [token] that can be validated.
+  ///
+  /// example:
+  /// ```dart
+  /// CloudFlareTurnstile(
+  ///   siteKey: '0x000000000000000000000',
+  ///   onTokenRecived: (String token) {
+  ///     print('Token: $token');
+  ///   },
+  /// ),
+  /// ```
   @override
-  final base.OnTokenRecived? onTokenRecived;
+  final i.OnTokenRecived? onTokenRecived;
 
+  /// A Callback invoke when the token expires and does not
+  /// reset the widget.
+  ///
+  /// example:
+  /// ```dart
+  /// CloudFlareTurnstile(
+  ///   siteKey: '0x000000000000000000000',
+  ///   onTokenExpired: () {
+  ///     print('Token Expired');
+  ///   },
+  /// ),
+  /// ```
   @override
-  final base.OnError? onError;
+  final i.OnTokenExpired? onTokenExpired;
+
+  /// A Callback invoke when there is an error
+  /// (e.g network error or challange failed).
+  ///
+  /// example:
+  /// ```dart
+  /// CloudFlareTurnstile(
+  ///   siteKey: '0x000000000000000000000',
+  ///   onError: (String error) {
+  ///     print('Error: $error');
+  ///   },
+  /// ),
+  /// ```
+  ///
+  /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
+  @override
+  final i.OnError? onError;
 
   const CloudFlareTurnstile({
     super.key,
     required this.siteKey,
+    this.baseUrl = 'http://localhost/',
     this.options = const TurnstileOptions(),
     this.controller,
     this.onTokenRecived,
+    this.onTokenExpired,
     this.onError,
   });
 
@@ -107,6 +162,10 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         });
       };
 
+      jsWindowObject['TokenExpired'] = (message) {
+        widget.onTokenExpired?.call();
+      };
+
       widget.controller?.setConnector(jsWindowObject);
     };
   }
@@ -115,13 +174,25 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) => iframe);
   }
 
+  final String _readyJSHandler = 'TurnstileReady(true);';
+  final String _tokenRecivedJSHandler = 'TurnstileToken(token);';
+  final String _errorJSHandler = 'TurnstileError(code);';
+  final String _tokenExpiredJSHandler = 'TokenExpired();';
+  final String _widgetCreatedJSHandler = 'TurnstileWidgetId(widgetId);';
+
   void _updateSource() {
     iframe.srcdoc = _embedWebIframeJsConnector(
-        htmlData(
-          siteKey: widget.siteKey,
-          options: widget.options,
-        ),
-        iframeViewType);
+      htmlData(
+        siteKey: widget.siteKey,
+        options: widget.options,
+        onTurnstileReady: _readyJSHandler,
+        onTokenRecived: _tokenRecivedJSHandler,
+        onTurnstileError: _errorJSHandler,
+        onTokenExpired: _tokenExpiredJSHandler,
+        onWidgetCreated: _widgetCreatedJSHandler,
+      ),
+      iframeViewType,
+    );
   }
 
   String _embedWebIframeJsConnector(String source, String windowDisambiguator) {
@@ -150,11 +221,19 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   }
 
   @override
+  void dispose() {
+    iframe.remove();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      width: _isWidgetReady ? widget.options.size.width : 0.1,
-      height: _isWidgetReady ? widget.options.size.height : 0.1,
+      width:
+          widget.options.mode == TurnstileMode.invisible ? 0.01 : (_isWidgetReady ? widget.options.size.width : 0.01),
+      height:
+          widget.options.mode == TurnstileMode.invisible ? 0.01 : (_isWidgetReady ? widget.options.size.height : 0.01),
       child: AbsorbPointer(
         child: RepaintBoundary(
           child: HtmlElementView(

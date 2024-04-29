@@ -4,8 +4,14 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 String htmlData({
   required String siteKey,
   required TurnstileOptions options,
+  required String onTurnstileReady,
+  required String onTokenRecived,
+  required String onTurnstileError,
+  required String onTokenExpired,
+  required String onWidgetCreated,
 }) {
-  RegExp exp = RegExp(r'<TURNSTILE_(SITE_KEY|THEME|LANGUAGE|RETRY|REFRESH_EXPIRED|REFRESH_TIMEOUT)>');
+  RegExp exp = RegExp(
+      r'<TURNSTILE_(SITE_KEY|THEME|LANGUAGE|RETRY|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
   String replacedText = _source.replaceAllMapped(exp, (match) {
     switch (match.group(1)) {
       case 'SITE_KEY':
@@ -17,11 +23,21 @@ String htmlData({
       case 'RETRY':
         return options.retryAutomatically ? 'auto' : 'never';
       case 'REFRESH_EXPIRED':
-        return options.retry.name;
+        return options.refreshExpired.name;
       case 'REFRESH_TIMEOUT':
         return options.refreshTimeout.name;
+      case 'READY':
+        return onTurnstileReady;
+      case 'TOKEN_RECIVED':
+        return onTokenRecived;
+      case 'ERROR':
+        return onTurnstileError;
+      case 'TOKEN_EXPIRED':
+        return onTokenExpired;
+      case 'CREATED':
+        return onWidgetCreated;
       default:
-        return match.group(0) ?? ""; // Return the original match if no replacement found
+        return match.group(0) ?? "";
     }
   });
 
@@ -45,7 +61,7 @@ String _source = """
    <div id="cf-turnstile"></div>
    <script>
       turnstile.ready(function () {
-         TurnstileReady(true);
+         <TURNSTILE_READY>
 
          const widgetId = turnstile.render('#cf-turnstile', {
             sitekey: '<TURNSTILE_SITE_KEY>',
@@ -55,23 +71,18 @@ String _source = """
             'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
             'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
             callback: function (token) {
-               TurnstileToken(token);
+               <TURNSTILE_TOKEN_RECIVED>
             },
             'error-callback': function (code) {
-               TurnstileError(code);
+               <TURNSTILE_ERROR>
             },
-            'expired-callback': function (code) {
-               console.log('expired token')
+            'expired-callback': function () {
+               <TURNSTILE_TOKEN_EXPIRED>
             }
          });
-         TurnstileWidgetId(widgetId);
+         
+         <TURNSTILE_CREATED>
       });
-   </script>
-   <script>
-      function refreshToken(widgetId) { turnstile.reset(widgetId); }
-   </script>
-   <script>
-      function isExpired(widgetId) { return turnstile.isExpired(widgetId); }
    </script>
    <style>
       * {

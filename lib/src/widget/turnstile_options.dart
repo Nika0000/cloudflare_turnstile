@@ -1,4 +1,18 @@
 class TurnstileOptions {
+  /// The Turnstile widget mode.
+  ///
+  ///  The 3 models for turnstile are:
+  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
+  /// to decide if an interactive challange should be used. if we show an interaction,
+  /// the user will be prmpted to check a box
+  ///
+  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
+  /// while the browser challanges run. Users will never be required or prompted
+  /// to interact with the widget
+  ///
+  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
+  /// an invisible browser challange is in progress. invisible challanges should take
+  /// a few seconds to complete.
   final TurnstileMode mode;
 
   /// The widget size. Can take the following values: [TurnstileSize.normal], [TurnstileSize.compact].
@@ -10,6 +24,8 @@ class TurnstileOptions {
   /// language code (e.g. en) or language and country code (e.g. en-US).
   /// Refer to the list of supported languages for more information.
   /// Default value is [auto]
+  ///
+  /// Refer to [list of supported languages](https://developers.cloudflare.com/turnstile/reference/supported-languages/) for more infrmation.
   final String language;
 
   final TurnstileTheme theme;
@@ -27,8 +43,13 @@ class TurnstileOptions {
 
   /// Automatically refreshes the token when it expires.
   /// Can take auto, manual or never, defaults to auto.
-  final TurnstileRefreshExpired retry;
+  final TurnstileRefreshExpired refreshExpired;
 
+  /// Controls whether the widget should automatically refresh upon
+  /// entering an interactive challange and observing a timeout.
+  /// Can take [auto] (automaticly), [manual] (prompts the visitor to
+  /// manualy refresh) or [never] (will show a timeout), defaults to [auto]
+  /// Only applies to widgets of mode [managed]
   final TurnstileRefreshTimeout refreshTimeout;
 
   const TurnstileOptions({
@@ -38,7 +59,7 @@ class TurnstileOptions {
     this.language = 'auto',
     this.retryInterval = const Duration(milliseconds: 8000),
     this.retryAutomatically = true,
-    this.retry = TurnstileRefreshExpired.auto,
+    this.refreshExpired = TurnstileRefreshExpired.auto,
     this.refreshTimeout = TurnstileRefreshTimeout.auto,
   });
 }
