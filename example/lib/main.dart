@@ -79,9 +79,12 @@ class _MyAppState extends State<MyApp> {
                     const SizedBox(width: 16.0),
                     ElevatedButton(
                       onPressed: () async {
-                        bool isExpired = await _controller.isExpired();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Token is ${isExpired ? "Expired" : "Valid"}')),
+                        await _controller.isExpired().then(
+                          (isExpired) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Token is ${isExpired ? "Expired" : "Valid"}')),
+                            );
+                          },
                         );
                       },
                       child: const Text('Validate'),
