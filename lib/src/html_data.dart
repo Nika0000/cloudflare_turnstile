@@ -11,7 +11,7 @@ String htmlData({
   required String onWidgetCreated,
 }) {
   RegExp exp = RegExp(
-      r'<TURNSTILE_(SITE_KEY|THEME|LANGUAGE|RETRY|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
+      r'<TURNSTILE_(SITE_KEY|THEME|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
   String replacedText = _source.replaceAllMapped(exp, (match) {
     switch (match.group(1)) {
       case 'SITE_KEY':
@@ -22,6 +22,8 @@ String htmlData({
         return options.language;
       case 'RETRY':
         return options.retryAutomatically ? 'auto' : 'never';
+      case 'RETRY_INTERVAL':
+        return options.retryInterval.inMilliseconds.toString();
       case 'REFRESH_EXPIRED':
         return options.refreshExpired.name;
       case 'REFRESH_TIMEOUT':
@@ -68,6 +70,7 @@ String _source = """
             theme: '<TURNSTILE_THEME>',
             language: '<TURNSTILE_LANGUAGE>',
             retry: '<TURNSTILE_RETRY>',
+            'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
             'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
             'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
             callback: function (token) {

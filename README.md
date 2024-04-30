@@ -66,8 +66,6 @@ CloudflareTurnstile(
 );
 ```
 
-> `TurnstileOptions` is based on Cloudflare Turnstile configuration [documentation](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/#configurations)
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](./LICENSE) file for details.

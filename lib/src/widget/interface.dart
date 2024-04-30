@@ -13,7 +13,7 @@ abstract class CloudFlareTurnstile {
   final String siteKey;
 
   /// A Turnstile widget options
-  final TurnstileOptions options;
+  final TurnstileOptions? options;
 
   /// A base url of turnstile Site
   final String baseUrl;
@@ -65,13 +65,13 @@ abstract class CloudFlareTurnstile {
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   final OnError? onError;
 
-  const CloudFlareTurnstile({
+  CloudFlareTurnstile({
     required this.siteKey,
     this.baseUrl = 'http://localhost/',
-    this.options = const TurnstileOptions(),
+    TurnstileOptions? options,
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
     this.onError,
-  });
+  }) : options = options ?? TurnstileOptions();
 }

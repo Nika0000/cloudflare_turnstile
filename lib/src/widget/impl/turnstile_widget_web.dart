@@ -78,16 +78,16 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   @override
   final i.OnError? onError;
 
-  const CloudFlareTurnstile({
+  CloudFlareTurnstile({
     super.key,
     required this.siteKey,
     this.baseUrl = 'http://localhost/',
-    this.options = const TurnstileOptions(),
+    TurnstileOptions? options,
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
     this.onError,
-  });
+  }) : options = options ?? TurnstileOptions();
 
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();

@@ -52,7 +52,7 @@ class TurnstileOptions {
   /// Only applies to widgets of mode [managed]
   final TurnstileRefreshTimeout refreshTimeout;
 
-  const TurnstileOptions({
+  TurnstileOptions({
     this.mode = TurnstileMode.managed,
     this.size = TurnstileSize.normal,
     this.theme = TurnstileTheme.auto,
@@ -61,7 +61,14 @@ class TurnstileOptions {
     this.retryAutomatically = true,
     this.refreshExpired = TurnstileRefreshExpired.auto,
     this.refreshTimeout = TurnstileRefreshTimeout.auto,
-  });
+  })  : assert(
+          retryInterval.inMilliseconds > 0 && retryInterval.inMilliseconds <= 900000,
+          "Duration must be greater than 0 and less than or equal to 900000 milliseconds.",
+        ),
+        assert(
+          mode == TurnstileMode.managed && refreshTimeout == TurnstileRefreshTimeout.auto,
+          "TurnstileRefreshTimeout has no effect on an invisible/non-interactive widget. ${mode.name} ${refreshTimeout.name}",
+        );
 }
 
 enum TurnstileMode { managed, nonInteractive, invisible }
