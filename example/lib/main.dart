@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
-import 'package:flutter/widgets.dart';
 
 void main() {
   runApp(const MyApp());
