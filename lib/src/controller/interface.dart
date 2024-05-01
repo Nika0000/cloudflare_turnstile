@@ -3,7 +3,7 @@ abstract class TurnstileController<T> {
   late T connector;
 
   /// Get current token.
-  String get token;
+  String? get token;
 
   /// Sets a new connector.
   void setConnector(T newConnector);

@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
-> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Site list. if you don't have a website, you can add the application package name to the Turnstile widget domains list in your Cloudflare Dashboard. Then the baseUrl should look like `baseUrl: 'http://com.example.app'` or `baseUrl: 'http://mywebsite.com/'`.
+> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Widget Domans list. `baseUrl` is must be a same as list of domains when creating a Widget.
 
 ## Configure Turnstile Widget
 

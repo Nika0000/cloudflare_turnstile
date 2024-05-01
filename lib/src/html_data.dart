@@ -11,13 +11,15 @@ String htmlData({
   required String onWidgetCreated,
 }) {
   RegExp exp = RegExp(
-      r'<TURNSTILE_(SITE_KEY|THEME|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
+      r'<TURNSTILE_(SITE_KEY|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
   String replacedText = _source.replaceAllMapped(exp, (match) {
     switch (match.group(1)) {
       case 'SITE_KEY':
         return siteKey;
       case 'THEME':
         return options.theme.name;
+      case 'SIZE':
+        return options.size.name;
       case 'LANGUAGE':
         return options.language;
       case 'RETRY':
@@ -68,6 +70,7 @@ String _source = """
          const widgetId = turnstile.render('#cf-turnstile', {
             sitekey: '<TURNSTILE_SITE_KEY>',
             theme: '<TURNSTILE_THEME>',
+            size: '<TURNSTILE_SIZE>',
             language: '<TURNSTILE_LANGUAGE>',
             retry: '<TURNSTILE_RETRY>',
             'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),

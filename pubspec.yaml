@@ -1,7 +1,7 @@
 name: cloudflare_turnstile
 description: The Cloudflare Turnstile Widget is an unofficial Flutter package designed to seamlessly integrate Cloudflare's Turnstile functionality into your Flutter applications.
 repository: https://github.com/Nika0000/cloudflare_turnstile
-version: 0.1.1
+version: 0.2.1
 
 platforms:
   android:

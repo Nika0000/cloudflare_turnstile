@@ -9,7 +9,7 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   @override
   late js.JsObject connector;
 
-  late String _token;
+  String? _token;
 
   late String _widgetId;
 
@@ -21,7 +21,7 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   /// Get current token
   @override
-  String get token => _token;
+  String? get token => _token;
 
   /// Sets a new token.
   @override

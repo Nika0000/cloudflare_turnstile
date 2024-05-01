@@ -1,3 +1,8 @@
+## 0.2.1
+
+* Added a optional `size` property.
+* Fixed `TurnstileOptions` issue on invisible widget mode.
+
 ## 0.1.1
 
 * Added a optional `retryInterval` property.

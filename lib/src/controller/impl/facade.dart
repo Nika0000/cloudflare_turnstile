@@ -10,7 +10,7 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   /// Get current token
   @override
-  String get token => throw UnimplementedError('Cannot call this function on the facade.');
+  String? get token => throw UnimplementedError('Cannot call this function on the facade.');
 
   /// Sets a new connector.
   @override

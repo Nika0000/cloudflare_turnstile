@@ -48,7 +48,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                   const SizedBox(height: 48.0),
                   CloudFlareTurnstile(
-                    siteKey: '0x0000000000000000000000',
+                    siteKey: '3x00000000000000000000FF',
                     options: _options,
                     controller: _controller,
                     onTokenRecived: (token) {
