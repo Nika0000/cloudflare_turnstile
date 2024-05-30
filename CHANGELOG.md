@@ -1,3 +1,8 @@
+## 0.4.0
+
+* Added a optional `action` property.
+* Added a optional `cData` property.
+
 ## 0.2.1
 
 * Added a optional `size` property.

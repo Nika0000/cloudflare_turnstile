@@ -19,13 +19,27 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   @override
   final String siteKey;
 
-  /// A Turnstile widget options
+  /// A customer value that can be used to differentiate widgets under the
+  /// same sitekey in analytics and which is returned upon validation.
+  ///
+  /// This can only contain up to 32 alphanumeric characters including _ and -.
   @override
-  final TurnstileOptions options;
+  final String? action;
+
+  /// A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// This can only contain up to 255 alphanumeric characters including _ and -.
+  @override
+  final String? cData;
 
   /// A base url of turnstile Site
   @override
   final String baseUrl;
+
+  /// A Turnstile widget options
+  @override
+  final TurnstileOptions options;
 
   /// A controller for an Turnstile widget
   @override
@@ -81,13 +95,29 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   CloudFlareTurnstile({
     super.key,
     required this.siteKey,
+    this.action,
+    this.cData,
     this.baseUrl = 'http://localhost/',
     TurnstileOptions? options,
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
     this.onError,
-  }) : options = options ?? TurnstileOptions();
+  }) : options = options ?? TurnstileOptions() {
+    if (action != null) {
+      assert(
+        action!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(action!),
+        'action must be contain up to 32 characters including _ and -.',
+      );
+    }
+
+    if (cData != null) {
+      assert(
+        cData!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(cData!),
+        'action must be contain up to 32 characters including _ and -.',
+      );
+    }
+  }
 
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
@@ -184,6 +214,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     iframe.srcdoc = _embedWebIframeJsConnector(
       htmlData(
         siteKey: widget.siteKey,
+        action: widget.action,
+        cData: widget.cData,
         options: widget.options,
         onTurnstileReady: _readyJSHandler,
         onTokenRecived: _tokenRecivedJSHandler,

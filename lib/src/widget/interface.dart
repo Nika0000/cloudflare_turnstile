@@ -12,11 +12,23 @@ abstract class CloudFlareTurnstile {
   /// It`s likely generated or obtained from the CloudFlare dashboard.
   final String siteKey;
 
-  /// A Turnstile widget options
-  final TurnstileOptions? options;
+  /// A customer value that can be used to differentiate widgets under the
+  /// same sitekey in analytics and which is returned upon validation.
+  ///
+  /// This can only contain up to 32 alphanumeric characters including _ and -.
+  final String? action;
+
+  /// A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// This can only contain up to 255 alphanumeric characters including _ and -.
+  final String? cData;
 
   /// A base url of turnstile Site
   final String baseUrl;
+
+  /// A Turnstile widget options
+  final TurnstileOptions? options;
 
   /// A controller for an Turnstile widget
   final TurnstileController? controller;
@@ -67,6 +79,8 @@ abstract class CloudFlareTurnstile {
 
   CloudFlareTurnstile({
     required this.siteKey,
+    this.action,
+    this.cData,
     this.baseUrl = 'http://localhost/',
     TurnstileOptions? options,
     this.controller,

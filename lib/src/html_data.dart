@@ -3,6 +3,8 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 
 String htmlData({
   required String siteKey,
+  String? action,
+  String? cData,
   required TurnstileOptions options,
   required String onTurnstileReady,
   required String onTokenRecived,
@@ -11,11 +13,15 @@ String htmlData({
   required String onWidgetCreated,
 }) {
   RegExp exp = RegExp(
-      r'<TURNSTILE_(SITE_KEY|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
-  String replacedText = _source.replaceAllMapped(exp, (match) {
+      r'<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
+  String? replacedText = _source.replaceAllMapped(exp, (match) {
     switch (match.group(1)) {
       case 'SITE_KEY':
         return siteKey;
+      case 'ACTION':
+        return action ?? '';
+      case 'CDATA':
+        return cData ?? '';
       case 'THEME':
         return options.theme.name;
       case 'SIZE':
@@ -69,6 +75,8 @@ String _source = """
 
          const widgetId = turnstile.render('#cf-turnstile', {
             sitekey: '<TURNSTILE_SITE_KEY>',
+            action: '<TURNSTILE_ACTION>',
+            cData: '<TURNSTILE_CDATA>',
             theme: '<TURNSTILE_THEME>',
             size: '<TURNSTILE_SIZE>',
             language: '<TURNSTILE_LANGUAGE>',
