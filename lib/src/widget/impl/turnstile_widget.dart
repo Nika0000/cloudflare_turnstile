@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
-class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+class Turnstile extends StatefulWidget implements i.Turnstile {
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -85,7 +85,7 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   @override
   final i.OnError? onError;
 
-  CloudFlareTurnstile({
+  Turnstile({
     super.key,
     required this.siteKey,
     this.action,
@@ -113,10 +113,10 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   }
 
   @override
-  State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
+  State<Turnstile> createState() => _TurnstileState();
 }
 
-class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
+class _TurnstileState extends State<Turnstile> {
   late String data;
 
   String? widgetId;
@@ -131,6 +131,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     disableVerticalScroll: true,
     supportZoom: false,
     useWideViewPort: false,
+    hardwareAcceleration: false,
   );
 
   final String _readyJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileReady`, true);';
@@ -200,7 +201,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     widget.controller?.setConnector(controller);
   }
 
-  final double _borderWidth = 2.0;
+  final double _borderWidth = 0.25;
 
   Widget get _view => PlatformInAppWebViewWidget(
         PlatformInAppWebViewWidgetCreationParams(

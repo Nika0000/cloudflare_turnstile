@@ -1,3 +1,7 @@
+## 1.0.2
+* Added `TurnstileFormField` which can be used for form validation.
+* Fixed `TurnstileController.token` reset token when refreshing.
+
 ## 0.4.0
 
 * Added a optional `action` property.

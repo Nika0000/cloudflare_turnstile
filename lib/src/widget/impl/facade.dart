@@ -3,7 +3,7 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
-class CloudFlareTurnstile extends StatelessWidget implements i.CloudFlareTurnstile {
+class Turnstile extends StatelessWidget implements i.Turnstile {
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -84,7 +84,7 @@ class CloudFlareTurnstile extends StatelessWidget implements i.CloudFlareTurnsti
   @override
   final i.OnError? onError;
 
-  CloudFlareTurnstile({
+  Turnstile({
     super.key,
     required this.siteKey,
     this.action,

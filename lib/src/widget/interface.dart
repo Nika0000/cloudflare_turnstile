@@ -5,7 +5,7 @@ typedef OnTokenRecived = Function(String token);
 typedef OnTokenExpired = Function();
 typedef OnError = Function(String error);
 
-abstract class CloudFlareTurnstile {
+abstract class Turnstile {
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -77,7 +77,7 @@ abstract class CloudFlareTurnstile {
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   final OnError? onError;
 
-  CloudFlareTurnstile({
+  Turnstile({
     required this.siteKey,
     this.action,
     this.cData,

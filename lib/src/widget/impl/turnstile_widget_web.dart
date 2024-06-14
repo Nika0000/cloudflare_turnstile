@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
-class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+class Turnstile extends StatefulWidget implements i.Turnstile {
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -92,7 +92,7 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   @override
   final i.OnError? onError;
 
-  CloudFlareTurnstile({
+  Turnstile({
     super.key,
     required this.siteKey,
     this.action,
@@ -120,10 +120,10 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   }
 
   @override
-  State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
+  State<Turnstile> createState() => _TurnstileState();
 }
 
-class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
+class _TurnstileState extends State<Turnstile> {
   late html.IFrameElement iframe;
   late String iframeViewType;
   late js.JsObject jsWindowObject;

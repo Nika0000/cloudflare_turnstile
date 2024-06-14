@@ -47,7 +47,7 @@ class _MyAppState extends State<MyApp> {
                     child: _token != null ? Text(_token!) : const CircularProgressIndicator(),
                   ),
                   const SizedBox(height: 48.0),
-                  CloudFlareTurnstile(
+                  Turnstile(
                     siteKey: '3x00000000000000000000FF',
                     options: _options,
                     controller: _controller,
