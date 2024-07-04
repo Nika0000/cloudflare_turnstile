@@ -1,4 +1,4 @@
-## 0.4.3
+## 0.4.2
 
 * Downgrade SDK version
 * Fixed example release build failure
