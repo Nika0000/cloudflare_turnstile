@@ -7,7 +7,7 @@ Cloudflare turnstile is a free CAPTCHAs Alternative, Turnstile delivers frustrat
 
 
 
-## ⚠️ NOTE
+## ⚠️ **NOTE** 
 
 This package is unofficial and not endorsed by Cloudflare. Use it at your own discretion.
 
@@ -16,6 +16,11 @@ This package is unofficial and not endorsed by Cloudflare. Use it at your own di
 ```sh
 flutter pub add cloudflare_turnstile
 ```
+
+### 📢 **IMPORTANT**
+
+Android Release build failed!
+Util new version released please use Flutter SDK >= 3.19.6
 
 # Example
 

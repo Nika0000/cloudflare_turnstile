@@ -230,14 +230,13 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   @override
   Widget build(BuildContext context) {
-    return switch (widget.options.mode) {
-      TurnstileMode.invisible => SizedBox.shrink(child: _view),
-      _ => AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          width: _isWidgetReady ? widget.options.size.width + _borderWidth : 0,
-          height: _isWidgetReady ? widget.options.size.height + _borderWidth : 0,
-          child: _view,
-        ),
-    };
+    return widget.options.mode == TurnstileMode.invisible
+        ? SizedBox.shrink(child: _view)
+        : AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            width: _isWidgetReady ? widget.options.size.width + _borderWidth : 0,
+            height: _isWidgetReady ? widget.options.size.height + _borderWidth : 0,
+            child: _view,
+          );
   }
 }

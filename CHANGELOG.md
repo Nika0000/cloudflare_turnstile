@@ -1,3 +1,8 @@
+## 0.4.3
+
+* Downgrade SDK version
+* Fixed example release build failure
+
 ## 0.4.0
 
 * Added a optional `action` property.
