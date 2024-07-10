@@ -17,11 +17,6 @@ This package is unofficial and not endorsed by Cloudflare. Use it at your own di
 flutter pub add cloudflare_turnstile
 ```
 
-### 📢 **IMPORTANT**
-
-Android Release build failed!
-Util new version released please use Flutter SDK >= 3.19.6
-
 # Example
 
 Here`s a quick example that show how to add Cloudflare Turnstile widget to your flutter app

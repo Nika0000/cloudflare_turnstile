@@ -1,8 +1,17 @@
+// ignore_for_file: depend_on_referenced_packages
+
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:cloudflare_turnstile/src/html_data.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
+
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -117,125 +126,207 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
 }
 
 class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
+  late final WebViewController _controller;
+
   late String data;
 
   String? widgetId;
 
   bool _isWidgetReady = false;
 
-  final InAppWebViewSettings _settings = InAppWebViewSettings(
-    disableHorizontalScroll: true,
-    verticalScrollBarEnabled: false,
-    transparentBackground: true,
-    disallowOverScroll: true,
-    disableVerticalScroll: true,
-    supportZoom: false,
-    useWideViewPort: false,
-  );
+  bool _isWidgetInteractive = false;
 
-  final String _readyJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileReady`, true);';
-  final String _tokenRecivedJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileToken`, token);';
-  final String _errorJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileError`, code);';
-  final String _tokenExpiredJSHandler = 'window.flutter_inappwebview.callHandler(`TokenExpired`);';
-  final String _widgetCreatedJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
+  final double _widgetWidth = TurnstileSize.normal.width;
+  double _widgetHeight = TurnstileSize.normal.height;
+
+  final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
+  final String _errorJSHandler = 'TurnstileError.postMessage(code);';
+  final String _tokenExpiredJSHandler = 'TokenExpired.postMessage();';
+  final String _widgetCreatedJSHandler = 'TurnstileWidgetId.postMessage(widgetId);';
 
   @override
   void initState() {
     super.initState();
+
+    _isWidgetInteractive = widget.options.mode != TurnstileMode.invisible;
+
     data = htmlData(
       siteKey: widget.siteKey,
       action: widget.action,
       cData: widget.cData,
       options: widget.options,
-      onTurnstileReady: _readyJSHandler,
       onTokenRecived: _tokenRecivedJSHandler,
       onTurnstileError: _errorJSHandler,
       onTokenExpired: _tokenExpiredJSHandler,
       onWidgetCreated: _widgetCreatedJSHandler,
     );
 
-    PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
+    late final PlatformWebViewControllerCreationParams params;
+
+    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
+      params = WebKitWebViewControllerCreationParams(
+        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
+      );
+    } else {
+      params = AndroidWebViewControllerCreationParams();
+    }
+
+    final WebViewController controller = WebViewController.fromPlatformCreationParams(params);
+
+    // Enable HybridComposition
+    if (Platform.isAndroid) {
+      AndroidWebViewWidgetCreationParams(
+        displayWithHybridComposition: true,
+        controller: controller.platform,
+      );
+    }
+
+    controller
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setOnConsoleMessage((mes) {
+        if (mes.level == JavaScriptLogLevel.warning) {
+          if (mes.message.contains(RegExp('Turnstile'))) {
+            if (kDebugMode) {
+              debugPrint(mes.message);
+            }
+          }
+        }
+      })
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (c) async {
+            if (widget.options.mode == TurnstileMode.auto) {
+              RegExp jsonFormatRegex = RegExp(r'^"|"$|\\');
+
+              var result = await _controller.runJavaScriptReturningResult("""getWidgetDimensions()""");
+
+              String jsonData = result.toString();
+
+              String jsonWithoutOuterQuotes = jsonData.replaceAll(jsonFormatRegex, '');
+              Map<String, dynamic> size = jsonDecode(jsonWithoutOuterQuotes);
+
+              //double width = size['width'].toDouble();
+              double height = size['height'].toDouble();
+
+              setState(() {
+                if (height > 0) {
+                  //_widgetWidth = width;
+                  _widgetHeight = height;
+                  _isWidgetInteractive = true;
+                } else {
+                  _isWidgetInteractive = false;
+                }
+
+                _isWidgetReady = true;
+              });
+            } else {
+              setState(() {
+                if (widget.options.mode != TurnstileMode.invisible) {
+                  _widgetHeight = _widgetHeight + 5.0;
+                }
+                _isWidgetReady = true;
+              });
+            }
+          },
+          onWebResourceError: (error) {
+            if (error.errorType == WebResourceErrorType.hostLookup) {
+              widget.onError?.call('Network connection error');
+            }
+          },
+          onNavigationRequest: (_) => NavigationDecision.prevent,
+          onHttpAuthRequest: (_) => NavigationDecision.prevent,
+          onHttpError: (error) {
+            if (error.response != null && error.response!.statusCode >= 500) {
+              widget.onError?.call('Cloudflare Service returns server error');
+            }
+          },
+        ),
+      )
+      ..enableZoom(false);
+
+    if (controller.platform is AndroidWebViewController) {
+      AndroidWebViewController.enableDebugging(false);
+      (controller.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
+        (request) => request.deny(),
+      );
+    }
+
+    _controller = controller;
+
+    widget.controller?.setConnector(controller);
+
+    _createChannels();
+
+    _controller.loadHtmlString(
+      data,
+      baseUrl: widget.baseUrl,
+    );
   }
 
-  _onWebViewCreated(PlatformInAppWebViewController controller) {
-    controller.addJavaScriptHandler(
-      handlerName: 'TurnstileToken',
-      callback: (args) {
-        widget.controller?.newToken = args[0];
-        widget.onTokenRecived?.call(args[0]);
+  _createChannels() {
+    _controller.addJavaScriptChannel(
+      'TurnstileToken',
+      onMessageReceived: (message) {
+        widget.controller?.newToken = message.message;
+        widget.onTokenRecived?.call(message.message);
       },
     );
 
-    controller.addJavaScriptHandler(
-      handlerName: 'TurnstileError',
-      callback: (args) {
-        widget.onError?.call(args[0]);
+    _controller.addJavaScriptChannel(
+      'TurnstileError',
+      onMessageReceived: (message) {
+        widget.onError?.call(message.message);
       },
     );
 
-    controller.addJavaScriptHandler(
-      handlerName: 'TurnstileWidgetId',
-      callback: (args) {
-        widgetId = args[0];
-        widget.controller?.widgetId = args[0];
+    _controller.addJavaScriptChannel(
+      'TurnstileWidgetId',
+      onMessageReceived: (message) {
+        widgetId = message.message;
+        widget.controller?.widgetId = message.message;
       },
     );
 
-    controller.addJavaScriptHandler(
-      handlerName: 'TurnstileReady',
-      callback: (args) {
+    _controller.addJavaScriptChannel(
+      'TurnstileReady',
+      onMessageReceived: (message) {
         setState(() {
-          _isWidgetReady = args[0];
+          _isWidgetReady = true;
         });
       },
     );
-
-    controller.addJavaScriptHandler(
-      handlerName: 'TokenExpired',
-      callback: (args) {
+    _controller.addJavaScriptChannel(
+      'TokenExpired',
+      onMessageReceived: (message) {
         widget.onTokenExpired?.call();
       },
     );
-
-    widget.controller?.setConnector(controller);
   }
 
-  final double _borderWidth = 2.0;
+  late final Widget _view = WebViewWidget(
+    controller: _controller,
+  ).build(context);
 
-  Widget get _view => PlatformInAppWebViewWidget(
-        PlatformInAppWebViewWidgetCreationParams(
-          initialData: InAppWebViewInitialData(
-            data: data,
-            baseUrl: WebUri(widget.baseUrl),
-          ),
-          initialSettings: _settings,
-          onWebViewCreated: (controller) => _onWebViewCreated(controller as PlatformInAppWebViewController),
-          onConsoleMessage: (_, message) {
-            if (message.message.contains(RegExp('Turnstile'))) {
-              debugPrint(message.message);
-              if (message.messageLevel == ConsoleMessageLevel.ERROR) {
-                widget.onError?.call(message.message);
-              }
-            }
-          },
-          onReceivedError: (_, __, webError) {
-            if (webError.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
-              return;
-            }
-
-            widget.onError?.call(webError.description);
-          },
-        ),
-      ).build(context);
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return widget.options.mode == TurnstileMode.invisible
-        ? SizedBox.shrink(child: _view)
-        : AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            width: _isWidgetReady ? widget.options.size.width + _borderWidth : 0,
-            height: _isWidgetReady ? widget.options.size.height + _borderWidth : 0,
+    return _isWidgetInteractive
+        ? SizedBox(
+            width: _isWidgetReady ? TurnstileSize.normal.width : 0,
+            height: _isWidgetReady ? TurnstileSize.normal.height : 0,
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              maxHeight: _widgetHeight,
+              maxWidth: _widgetWidth,
+              child: _view,
+            ),
+          )
+        : SizedBox.shrink(
             child: _view,
           );
   }

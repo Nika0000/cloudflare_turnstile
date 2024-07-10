@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
-import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-class TurnstileController extends ChangeNotifier implements i.TurnstileController<PlatformInAppWebViewController> {
+class TurnstileController extends ChangeNotifier implements i.TurnstileController<WebViewController> {
   /// The connector associated with the controller.
   @override
-  late PlatformInAppWebViewController connector;
+  late WebViewController connector;
 
   String? _token;
 
@@ -48,7 +48,8 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   /// ```
   @override
   Future<void> refreshToken() async {
-    await connector.evaluateJavascript(source: """turnstile.reset(`$_widgetId`);""");
+    _token = null;
+    await connector.runJavaScript("""turnstile.reset(`$_widgetId`);""");
   }
 
   /// The function that check if a widget has expired by either
@@ -68,8 +69,8 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   /// ```
   @override
   Future<bool> isExpired() async {
-    final result = await connector.evaluateJavascript(source: """turnstile.isExpired(`$_widgetId`);""");
-    return result ?? true;
+    final result = await connector.runJavaScriptReturningResult("""turnstile.isExpired(`$_widgetId`);""") as bool;
+    return result;
   }
 
   /// dispose resources

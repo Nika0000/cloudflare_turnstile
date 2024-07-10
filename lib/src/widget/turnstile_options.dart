@@ -13,6 +13,16 @@ class TurnstileOptions {
   /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
   /// an invisible browser challange is in progress. invisible challanges should take
   /// a few seconds to complete.
+  ///
+  /// [TurnstileMode.auto] Automatically detects whether the Turnstile widget should
+  ///  operate in interactive or invisible mode based on contextual cues.
+  ///
+  /// Note: This mode relies on contextual cues and does not guarantee detection accuracy since
+  /// Cloudflare's Turnstile does not provide direct methods to determine widget mode.
+  ///
+  /// Default value is [auto]
+  ///
+  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
   final TurnstileMode mode;
 
   /// The widget size. Can take the following values: [TurnstileSize.normal], [TurnstileSize.compact].
@@ -53,7 +63,7 @@ class TurnstileOptions {
   final TurnstileRefreshTimeout refreshTimeout;
 
   TurnstileOptions({
-    this.mode = TurnstileMode.managed,
+    this.mode = TurnstileMode.auto,
     this.size = TurnstileSize.normal,
     this.theme = TurnstileTheme.auto,
     this.language = 'auto',
@@ -71,7 +81,7 @@ class TurnstileOptions {
             "$refreshTimeout has no effect on an $mode widget.");
 }
 
-enum TurnstileMode { managed, nonInteractive, invisible }
+enum TurnstileMode { managed, nonInteractive, invisible, auto }
 
 enum TurnstileSize {
   normal(300, 65),

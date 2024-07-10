@@ -1,5 +1,7 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
+import 'dart:async';
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:ui_web' as ui;
@@ -126,7 +128,15 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
 class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   late html.IFrameElement iframe;
   late String iframeViewType;
+  late StreamSubscription iframeOnLoadSubscription;
   late js.JsObject jsWindowObject;
+
+  late bool _didLoadInitialContent;
+
+  late bool _isWidgetInteractive;
+
+  final double _widgetWidth = TurnstileSize.normal.width;
+  double _widgetHeight = TurnstileSize.normal.height;
 
   final String _jsToDartConnectorFN = 'connect_js_to_flutter';
 
@@ -138,12 +148,18 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   void initState() {
     super.initState();
 
+    _didLoadInitialContent = false;
+
+    _isWidgetInteractive = widget.options.mode == TurnstileMode.managed;
+
     iframeViewType = _createViewType();
     iframe = _createIFrame();
 
     _connectJsToFlutter();
 
     _registerView(iframeViewType);
+
+    _registerIframeOnLoadCallBack();
 
     Future.delayed(Duration.zero, () {
       _updateSource();
@@ -168,6 +184,41 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     return iframeElement;
   }
 
+  void _registerIframeOnLoadCallBack() {
+    iframeOnLoadSubscription = iframe.onLoad.listen((event) async {
+      if (!_didLoadInitialContent) {
+        _didLoadInitialContent = true;
+      } else {
+        if (widget.options.mode == TurnstileMode.auto) {
+          var result = widget.controller?.connector.callMethod('eval', ["""getWidgetDimensions();"""]);
+          Future.value(result).then((val) {
+            Map<String, dynamic> size = jsonDecode(val as String);
+
+            // double width = size['width'];
+            double height = size['height'];
+
+            // check if widget have visible content
+            setState(
+              () {
+                if (height > 0) {
+                  // _widgetWidth = width;
+                  _widgetHeight = height;
+                  _isWidgetInteractive = true;
+                } else {
+                  _isWidgetInteractive = false;
+                }
+
+                _isWidgetReady = true;
+              },
+            );
+          });
+        } else {
+          setState(() => _isWidgetReady = true);
+        }
+      }
+    });
+  }
+
   void _connectJsToFlutter() {
     js.context['$_jsToDartConnectorFN$iframeViewType'] = (js.JsObject window) {
       jsWindowObject = window;
@@ -186,12 +237,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         widget.controller?.widgetId = message;
       };
 
-      jsWindowObject['TurnstileReady'] = (message) {
-        setState(() {
-          _isWidgetReady = message;
-        });
-      };
-
       jsWindowObject['TokenExpired'] = (message) {
         widget.onTokenExpired?.call();
       };
@@ -204,7 +249,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) => iframe);
   }
 
-  final String _readyJSHandler = 'TurnstileReady(true);';
   final String _tokenRecivedJSHandler = 'TurnstileToken(token);';
   final String _errorJSHandler = 'TurnstileError(code);';
   final String _tokenExpiredJSHandler = 'TokenExpired();';
@@ -217,7 +261,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         action: widget.action,
         cData: widget.cData,
         options: widget.options,
-        onTurnstileReady: _readyJSHandler,
         onTokenRecived: _tokenRecivedJSHandler,
         onTurnstileError: _errorJSHandler,
         onTokenExpired: _tokenExpiredJSHandler,
@@ -252,28 +295,39 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     return '$splitSource1$whatToEmbed\n$splitSource2';
   }
 
+  late final Widget _view = HtmlElementView(
+    key: widget.key,
+    viewType: iframeViewType,
+  );
+
   @override
   void dispose() {
+    iframeOnLoadSubscription.cancel();
     iframe.remove();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      width:
-          widget.options.mode == TurnstileMode.invisible ? 0.01 : (_isWidgetReady ? widget.options.size.width : 0.01),
-      height:
-          widget.options.mode == TurnstileMode.invisible ? 0.01 : (_isWidgetReady ? widget.options.size.height : 0.01),
-      child: AbsorbPointer(
-        child: RepaintBoundary(
-          child: HtmlElementView(
-            key: widget.key,
-            viewType: iframeViewType,
-          ),
-        ),
-      ),
-    );
+    return _isWidgetInteractive
+        ? SizedBox(
+            width: _isWidgetReady ? TurnstileSize.normal.width : 0.01,
+            height: _isWidgetReady ? TurnstileSize.normal.height : 0.01,
+            child: AbsorbPointer(
+              child: RepaintBoundary(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  maxWidth: _widgetWidth,
+                  maxHeight: _widgetHeight,
+                  child: _view,
+                ),
+              ),
+            ),
+          )
+        : SizedBox(
+            width: 0.01,
+            height: 0.01,
+            child: _view,
+          );
   }
 }

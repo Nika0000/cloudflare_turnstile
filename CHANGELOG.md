@@ -1,3 +1,9 @@
+## 1.0.2
+
+* Added a optional `TurnstileMode.auto` property.
+* Fixed Android deprecation notes.
+* Fixed `TurnstileController.token` reset token when refreshing.
+
 ## 0.4.2
 
 * Downgrade SDK version

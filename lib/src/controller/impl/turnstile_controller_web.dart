@@ -48,6 +48,7 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   /// ```
   @override
   Future<void> refreshToken() async {
+    _token = null;
     await connector.callMethod('eval', ["""turnstile.reset(`$_widgetId`);"""]);
   }
 
