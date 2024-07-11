@@ -15,7 +15,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final TurnstileController _controller = TurnstileController();
   final TurnstileOptions _options = TurnstileOptions(
-    mode: TurnstileMode.managed,
+    mode: TurnstileMode.auto,
     size: TurnstileSize.normal,
     theme: TurnstileTheme.light,
     refreshExpired: TurnstileRefreshExpired.manual,
@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                   const SizedBox(height: 48.0),
                   CloudFlareTurnstile(
-                    siteKey: '2x00000000000000000000BB',
+                    siteKey: '3x00000000000000000000FF',
                     options: _options,
                     controller: _controller,
                     onTokenRecived: (token) {

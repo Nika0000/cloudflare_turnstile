@@ -1,7 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
-
-import 'package:flutter/material.dart';
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
+import 'package:cloudflare_turnstile/src/widget/interface.dart';
+import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class TurnstileController extends ChangeNotifier implements i.TurnstileController<WebViewController> {
@@ -11,11 +11,13 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   String? _token;
 
-  late String _widgetId;
+  String _widgetId = '';
+
+  bool _isReady = false;
 
   /// Sets a new connector.
   @override
-  void setConnector(newConnector) {
+  void setConnector(WebViewController newConnector) {
     connector = newConnector;
   }
 
@@ -25,14 +27,24 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   /// Sets a new token.
   @override
-  set newToken(String token) {
+  set token(String? token) {
     _token = token;
     notifyListeners();
   }
 
+  /// Get a current widget id
+  @override
+  String get widgetId => _widgetId;
+
   /// Sets the Turnstile current widget id.
   @override
   set widgetId(String id) => _widgetId = id;
+
+  @override
+  bool get isWidgetReady => _isReady;
+
+  @override
+  set isWidgetReady(bool isReady) => _isReady = isReady;
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed.
@@ -49,7 +61,11 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   @override
   Future<void> refreshToken() async {
     _token = null;
-    await connector.runJavaScript("""turnstile.reset(`$_widgetId`);""");
+    if (!_isReady) {
+      await connector.reload();
+      return;
+    }
+    await connector.runJavaScript('''turnstile.reset(`$_widgetId`);''');
   }
 
   /// The function that check if a widget has expired by either
@@ -69,7 +85,10 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   /// ```
   @override
   Future<bool> isExpired() async {
-    final result = await connector.runJavaScriptReturningResult("""turnstile.isExpired(`$_widgetId`);""") as bool;
+    if (!_isReady || _widgetId.isEmpty) {
+      return true;
+    }
+    final result = await connector.runJavaScriptReturningResult('''turnstile.isExpired(`$_widgetId`);''') as bool;
     return result;
   }
 

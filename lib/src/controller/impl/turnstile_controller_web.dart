@@ -1,8 +1,9 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
 
-import 'package:flutter/material.dart';
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
+import 'package:cloudflare_turnstile/src/widget/interface.dart';
+import 'package:flutter/material.dart';
 
 class TurnstileController extends ChangeNotifier implements i.TurnstileController<js.JsObject> {
   /// The connector associated with the controller.
@@ -11,7 +12,9 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   String? _token;
 
-  late String _widgetId;
+  String _widgetId = '';
+
+  bool _isReady = false;
 
   /// Sets a new connector.
   @override
@@ -25,14 +28,26 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
 
   /// Sets a new token.
   @override
-  set newToken(String token) {
+  set token(String? token) {
     _token = token;
     notifyListeners();
   }
 
+  /// Get a current widget id
+  @override
+  String get widgetId => _widgetId;
+
   /// Sets the Turnstile current widget id.
   @override
   set widgetId(String id) => _widgetId = id;
+
+  /// Get a current widget is ready
+  @override
+  bool get isWidgetReady => _isReady;
+
+  /// Sets a Widget is ready
+  @override
+  set isWidgetReady(bool isReady) => _isReady = isReady;
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed.
@@ -49,7 +64,7 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   @override
   Future<void> refreshToken() async {
     _token = null;
-    await connector.callMethod('eval', ["""turnstile.reset(`$_widgetId`);"""]);
+    await connector.callMethod('eval', ['''turnstile.reset(`$_widgetId`);''']);
   }
 
   /// The function that check if a widget has expired by either
@@ -69,8 +84,11 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
   /// ```
   @override
   Future<bool> isExpired() async {
-    final result = connector.callMethod('eval', ["""turnstile.isExpired(`$_widgetId`);"""]);
-    return Future.value(result ?? true);
+    if (!_isReady || _widgetId.isEmpty) {
+      return true;
+    }
+    final result = connector.callMethod('eval', ['''turnstile.isExpired(`$_widgetId`);''']);
+    return Future.value(result as bool);
   }
 
   /// dispose resources

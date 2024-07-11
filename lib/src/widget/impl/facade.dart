@@ -1,9 +1,23 @@
 import 'package:cloudflare_turnstile/src/controller/interface.dart';
+import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
-import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
 class CloudFlareTurnstile extends StatelessWidget implements i.CloudFlareTurnstile {
+  /// Create a Cloudflare Turnstile Widget
+  CloudFlareTurnstile({
+    super.key,
+    required this.siteKey,
+    this.action,
+    this.cData,
+    this.baseUrl = 'http://localhost/',
+    TurnstileOptions? options,
+    this.controller,
+    this.onTokenRecived,
+    this.onTokenExpired,
+    this.onError,
+  }) : options = options ?? TurnstileOptions();
+
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -35,7 +49,7 @@ class CloudFlareTurnstile extends StatelessWidget implements i.CloudFlareTurnsti
 
   /// A controller for an Turnstile widget
   @override
-  final TurnstileController? controller;
+  final TurnstileController<dynamic>? controller;
 
   /// A Callback invoked upon success of the challange.
   /// The callback is passed a [token] that can be validated.
@@ -83,19 +97,6 @@ class CloudFlareTurnstile extends StatelessWidget implements i.CloudFlareTurnsti
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
   final i.OnError? onError;
-
-  CloudFlareTurnstile({
-    super.key,
-    required this.siteKey,
-    this.action,
-    this.cData,
-    this.baseUrl = 'http://localhost/',
-    TurnstileOptions? options,
-    this.controller,
-    this.onTokenRecived,
-    this.onTokenExpired,
-    this.onError,
-  }) : options = options ?? TurnstileOptions();
 
   @override
   Widget build(BuildContext context) {

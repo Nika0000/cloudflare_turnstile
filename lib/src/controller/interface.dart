@@ -1,3 +1,5 @@
+import 'package:cloudflare_turnstile/src/widget/interface.dart';
+
 abstract class TurnstileController<T> {
   /// The connector associated with the controller.
   late T connector;
@@ -9,7 +11,16 @@ abstract class TurnstileController<T> {
   void setConnector(T newConnector);
 
   /// Sets a new token.
-  set newToken(String token);
+  set token(String? token);
+
+  /// Get a current widget id
+  String get widgetId;
+
+  /// Get a current widget is ready
+  bool get isWidgetReady;
+
+  /// Sets a Widget is ready
+  set isWidgetReady(bool isReady);
 
   /// Sets the Turnstile current widget id.
   set widgetId(String id);

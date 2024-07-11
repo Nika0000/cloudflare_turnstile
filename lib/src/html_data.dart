@@ -3,17 +3,19 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 
 String htmlData({
   required String siteKey,
-  String? action,
-  String? cData,
   required TurnstileOptions options,
   required String onTokenRecived,
   required String onTurnstileError,
   required String onTokenExpired,
   required String onWidgetCreated,
+  String? action,
+  String? cData,
 }) {
-  RegExp exp = RegExp(
-      r'<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>');
-  String? replacedText = _source.replaceAllMapped(exp, (match) {
+  final exp = RegExp(
+    '<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>',
+  );
+
+  final replacedText = _source.replaceAllMapped(exp, (match) {
     switch (match.group(1)) {
       case 'SITE_KEY':
         return siteKey;
@@ -44,7 +46,7 @@ String htmlData({
       case 'CREATED':
         return onWidgetCreated;
       default:
-        return match.group(0) ?? "";
+        return match.group(0) ?? '';
     }
   });
 

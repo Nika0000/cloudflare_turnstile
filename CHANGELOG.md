@@ -1,3 +1,9 @@
+## 1.2.1
+
+* Added a auto detect widget theme based on device brightnese
+* Added handle web resource errors
+* Fixed Web `TurnstileMode.auto` failed to detect widget mode
+
 ## 1.0.2
 
 * Added a optional `TurnstileMode.auto` property.

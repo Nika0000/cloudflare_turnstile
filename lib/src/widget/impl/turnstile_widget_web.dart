@@ -6,14 +6,42 @@ import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:ui_web' as ui;
 
-import 'package:cloudflare_turnstile/src/html_data.dart';
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_web.dart';
+import 'package:cloudflare_turnstile/src/html_data.dart';
+import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 
 class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+  /// Create a Cloudflare Turnstile Widget
+  CloudFlareTurnstile({
+    super.key,
+    required this.siteKey,
+    this.action,
+    this.cData,
+    this.baseUrl = 'http://localhost/',
+    TurnstileOptions? options,
+    this.controller,
+    this.onTokenRecived,
+    this.onTokenExpired,
+    this.onError,
+  }) : options = options ?? TurnstileOptions() {
+    if (action != null) {
+      assert(
+        action!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(action!),
+        'action must be contain up to 32 characters including _ and -.',
+      );
+    }
+
+    if (cData != null) {
+      assert(
+        cData!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(cData!),
+        'action must be contain up to 32 characters including _ and -.',
+      );
+    }
+  }
+
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -94,33 +122,6 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
   @override
   final i.OnError? onError;
 
-  CloudFlareTurnstile({
-    super.key,
-    required this.siteKey,
-    this.action,
-    this.cData,
-    this.baseUrl = 'http://localhost/',
-    TurnstileOptions? options,
-    this.controller,
-    this.onTokenRecived,
-    this.onTokenExpired,
-    this.onError,
-  }) : options = options ?? TurnstileOptions() {
-    if (action != null) {
-      assert(
-        action!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(action!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-
-    if (cData != null) {
-      assert(
-        cData!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(cData!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-  }
-
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
 }
@@ -128,10 +129,8 @@ class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstil
 class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   late html.IFrameElement iframe;
   late String iframeViewType;
-  late StreamSubscription iframeOnLoadSubscription;
+  late StreamSubscription<dynamic> iframeOnLoadSubscription;
   late js.JsObject jsWindowObject;
-
-  late bool _didLoadInitialContent;
 
   late bool _isWidgetInteractive;
 
@@ -148,21 +147,25 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   void initState() {
     super.initState();
 
-    _didLoadInitialContent = false;
-
     _isWidgetInteractive = widget.options.mode == TurnstileMode.managed;
+
+    if (widget.options.theme == TurnstileTheme.auto) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final brightness = MediaQuery.of(context).platformBrightness;
+        final isDark = brightness == Brightness.dark;
+        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      });
+    }
 
     iframeViewType = _createViewType();
     iframe = _createIFrame();
 
     _connectJsToFlutter();
-
     _registerView(iframeViewType);
-
-    _registerIframeOnLoadCallBack();
 
     Future.delayed(Duration.zero, () {
       _updateSource();
+      _registerIframeOnLoadCallBack();
     });
   }
 
@@ -186,53 +189,63 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   void _registerIframeOnLoadCallBack() {
     iframeOnLoadSubscription = iframe.onLoad.listen((event) async {
-      if (!_didLoadInitialContent) {
-        _didLoadInitialContent = true;
-      } else {
-        if (widget.options.mode == TurnstileMode.auto) {
-          var result = widget.controller?.connector.callMethod('eval', ["""getWidgetDimensions();"""]);
-          Future.value(result).then((val) {
-            Map<String, dynamic> size = jsonDecode(val as String);
-
-            // double width = size['width'];
-            double height = size['height'];
-
-            // check if widget have visible content
-            setState(
-              () {
-                if (height > 0) {
-                  // _widgetWidth = width;
-                  _widgetHeight = height;
-                  _isWidgetInteractive = true;
-                } else {
-                  _isWidgetInteractive = false;
-                }
-
-                _isWidgetReady = true;
-              },
-            );
-          });
-        } else {
-          setState(() => _isWidgetReady = true);
-        }
-      }
+      await _detectWidgetMode();
     });
+  }
+
+  Future<void> _detectWidgetMode() async {
+    if (_isWidgetReady) {
+      return;
+    }
+
+    if (widget.options.mode == TurnstileMode.auto) {
+      final result = jsWindowObject.callMethod(
+        'eval',
+        ['''getWidgetDimensions();'''],
+      );
+
+      await Future.value(result).then((val) {
+        final size = jsonDecode(val as String);
+
+        // double width = size['width'];
+        final height = size['height'] as double;
+
+        setState(
+          () {
+            // check if widget have visible content
+            if (height > 0) {
+              // _widgetWidth = width;
+              _widgetHeight = height;
+              _isWidgetInteractive = true;
+            } else {
+              _isWidgetInteractive = false;
+            }
+
+            _isWidgetReady = true;
+          },
+        );
+      });
+    } else {
+      setState(() => _isWidgetReady = true);
+    }
+
+    widget.controller?.isWidgetReady = _isWidgetReady;
   }
 
   void _connectJsToFlutter() {
     js.context['$_jsToDartConnectorFN$iframeViewType'] = (js.JsObject window) {
       jsWindowObject = window;
 
-      jsWindowObject['TurnstileToken'] = (message) {
-        widget.controller?.newToken = message;
+      jsWindowObject['TurnstileToken'] = (String message) {
+        widget.controller?.token = message;
         widget.onTokenRecived?.call(message);
       };
 
-      jsWindowObject['TurnstileError'] = (message) {
+      jsWindowObject['TurnstileError'] = (String message) {
         widget.onError?.call(message);
       };
 
-      jsWindowObject['TurnstileWidgetId'] = (message) {
+      jsWindowObject['TurnstileWidgetId'] = (String message) {
         widgetId = message;
         widget.controller?.widgetId = message;
       };
@@ -246,7 +259,10 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   }
 
   void _registerView(String viewType) {
-    ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) => iframe);
+    ui.platformViewRegistry.registerViewFactory(
+      viewType,
+      (int viewId) => iframe,
+    );
   }
 
   final String _tokenRecivedJSHandler = 'TurnstileToken(token);';
@@ -284,7 +300,9 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     const newLine = '\n';
     const scriptOpenTag = '<script>';
     const scriptCloseTag = '</script>';
-    final jsContent = jsContents.reduce((prev, elem) => prev + newLine * 2 + elem);
+    final jsContent = jsContents.reduce(
+      (prev, elem) => prev + newLine * 2 + elem,
+    );
 
     final whatToEmbed = newLine + scriptOpenTag + newLine + jsContent + newLine + scriptCloseTag + newLine;
 
