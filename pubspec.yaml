@@ -1,7 +1,7 @@
 name: cloudflare_turnstile
 description: A free CAPTCHAs alternative to enhance security and protect against bots.
 repository: https://github.com/Nika0000/cloudflare_turnstile
-version: 1.0.2
+version: 1.2.1
 
 platforms:
   android:
@@ -16,6 +16,8 @@ dependencies:
   flutter:
     sdk: flutter
   webview_flutter: ^4.8.0
+  webview_flutter_android: ^3.16.4
+  webview_flutter_wkwebview: ^3.14.0
 
 dev_dependencies:
   flutter_test:
