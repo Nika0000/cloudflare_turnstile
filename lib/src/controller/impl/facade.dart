@@ -3,7 +3,9 @@ import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/interface.dart';
 import 'package:flutter/material.dart';
 
-class TurnstileController extends ChangeNotifier implements i.TurnstileController<dynamic> {
+/// Facade class
+class TurnstileController extends ChangeNotifier
+    implements i.TurnstileController<dynamic> {
   /// The connector associated with the controller.
   @override
   late dynamic connector;

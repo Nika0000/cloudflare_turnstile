@@ -10,7 +10,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
-class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+class CloudFlareTurnstile extends StatefulWidget
+    implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
     super.key,
@@ -140,7 +141,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
   final String _errorJSHandler = 'TurnstileError.postMessage(code);';
   final String _tokenExpiredJSHandler = 'TokenExpired.postMessage();';
-  final String _widgetCreatedJSHandler = 'TurnstileWidgetId.postMessage(widgetId);';
+  final String _widgetCreatedJSHandler =
+      'TurnstileWidgetId.postMessage(widgetId);';
 
   @override
   void initState() {
@@ -152,7 +154,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDark = brightness == Brightness.dark;
-        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+        widget.options.theme =
+            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
       });
     }
 
@@ -257,7 +260,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
           onNavigationRequest: (_) => NavigationDecision.prevent,
           onHttpAuthRequest: (_) => NavigationDecision.prevent,
           onHttpError: (error) {
-            if (error.response != null && error.response!.statusCode >= 400) {
+            if (error.response != null && error.response!.statusCode >= 500) {
               setState(() {
                 _isWidgetReady = false;
                 widget.controller?.isWidgetReady = _isWidgetReady;
@@ -273,7 +276,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(false);
-      (controller.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
+      (controller.platform as AndroidWebViewController)
+          .setOnPlatformPermissionRequest(
         (request) => request.deny(),
       );
     }

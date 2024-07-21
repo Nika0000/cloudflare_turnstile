@@ -11,13 +11,14 @@ import 'package:cloudflare_turnstile/src/html_data.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
-class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+/// Cloudflare Turnstile web implementation
+class CloudFlareTurnstile extends StatefulWidget
+    implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
-    super.key,
     required this.siteKey,
+    super.key,
     this.action,
     this.cData,
     this.baseUrl = 'http://localhost/',
@@ -153,7 +154,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDark = brightness == Brightness.dark;
-        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+        widget.options.theme =
+            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
       });
     }
 
@@ -182,6 +184,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       ..width = widget.options.size.width.toString()
       ..height = widget.options.size.height.toString()
       ..style.width = '100%'
+      ..title = 'CloudFlare_Turnstile'
       ..style.height = '100%';
 
     return iframeElement;
@@ -189,15 +192,11 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   void _registerIframeOnLoadCallBack() {
     iframeOnLoadSubscription = iframe.onLoad.listen((event) async {
-      await _detectWidgetMode();
+      Future.delayed(Duration.zero, _detectWidgetMode);
     });
   }
 
   Future<void> _detectWidgetMode() async {
-    if (_isWidgetReady) {
-      return;
-    }
-
     if (widget.options.mode == TurnstileMode.auto) {
       final result = jsWindowObject.callMethod(
         'eval',
@@ -289,7 +288,9 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   String _embedWebIframeJsConnector(String source, String windowDisambiguator) {
     return _embedJsInHtmlSource(
       source,
-      {'parent.$_jsToDartConnectorFN$windowDisambiguator && parent.$_jsToDartConnectorFN$windowDisambiguator(window)'},
+      {
+        'parent.$_jsToDartConnectorFN$windowDisambiguator && parent.$_jsToDartConnectorFN$windowDisambiguator(window)'
+      },
     );
   }
 
@@ -304,7 +305,13 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       (prev, elem) => prev + newLine * 2 + elem,
     );
 
-    final whatToEmbed = newLine + scriptOpenTag + newLine + jsContent + newLine + scriptCloseTag + newLine;
+    final whatToEmbed = newLine +
+        scriptOpenTag +
+        newLine +
+        jsContent +
+        newLine +
+        scriptCloseTag +
+        newLine;
 
     final indexToSplit = source.indexOf('</head>');
     final splitSource1 = source.substring(0, indexToSplit);
@@ -329,8 +336,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   Widget build(BuildContext context) {
     return _isWidgetInteractive
         ? SizedBox(
-            width: _isWidgetReady ? TurnstileSize.normal.width : 0.01,
-            height: _isWidgetReady ? TurnstileSize.normal.height : 0.01,
+            width: TurnstileSize.normal.width,
+            height: TurnstileSize.normal.height,
             child: AbsorbPointer(
               child: RepaintBoundary(
                 child: OverflowBox(

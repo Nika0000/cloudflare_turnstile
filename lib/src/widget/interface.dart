@@ -60,7 +60,7 @@ abstract class CloudFlareTurnstile {
   final TurnstileController<dynamic>? controller;
 
   /// A Callback invoked upon success of the challange.
-  /// The callback is passed a [token] that can be validated.
+  /// The callback is passed a `token` that can be validated.
   ///
   /// example:
   /// ```dart

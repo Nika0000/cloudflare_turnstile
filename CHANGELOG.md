@@ -1,3 +1,8 @@
+## 1.2.3
+
+* Fixed Mobile Turnstile challange returns 401 error
+* Fixed Web `TurnstileMode.auto` not working sometimes.
+
 ## 1.2.1
 
 * Added a auto detect widget theme based on device brightnese

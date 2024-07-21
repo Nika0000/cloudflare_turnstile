@@ -1,5 +1,6 @@
 import 'package:cloudflare_turnstile/src/widget/interface.dart';
 
+/// Interface for controller
 abstract class TurnstileController<T> {
   /// The connector associated with the controller.
   late T connector;

@@ -4,7 +4,9 @@ import 'package:cloudflare_turnstile/src/widget/interface.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class TurnstileController extends ChangeNotifier implements i.TurnstileController<WebViewController> {
+/// Turnstile controller mobile implementation.
+class TurnstileController extends ChangeNotifier
+    implements i.TurnstileController<WebViewController> {
   /// The connector associated with the controller.
   @override
   late WebViewController connector;
@@ -88,7 +90,8 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
     if (!_isReady || _widgetId.isEmpty) {
       return true;
     }
-    final result = await connector.runJavaScriptReturningResult('''turnstile.isExpired(`$_widgetId`);''') as bool;
+    final result = await connector.runJavaScriptReturningResult(
+        '''turnstile.isExpired(`$_widgetId`);''') as bool;
     return result;
   }
 

@@ -45,7 +45,9 @@ class _MyAppState extends State<MyApp> {
                 children: [
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 700),
-                    child: _token != null ? Text(_token!) : const CircularProgressIndicator(),
+                    child: _token != null
+                        ? Text(_token!)
+                        : const CircularProgressIndicator(),
                   ),
                   const SizedBox(height: 48.0),
                   CloudFlareTurnstile(
@@ -84,7 +86,8 @@ class _MyAppState extends State<MyApp> {
                           _controller.isExpired().then((isExpired) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Token is ${isExpired ? "Expired" : "Valid"}'),
+                                content: Text(
+                                    'Token is ${isExpired ? "Expired" : "Valid"}'),
                               ),
                             );
                           });

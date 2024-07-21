@@ -1,6 +1,7 @@
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 
+/// Turnstile view builder
 String htmlData({
   required String siteKey,
   required TurnstileOptions options,
@@ -96,9 +97,10 @@ String _source = """
            <TURNSTILE_CREATED>
         });
 
-      function getWidgetDimensions() {
+       function getWidgetDimensions() {
         const widgetElement = document.getElementById('cf-turnstile');
         const rect = widgetElement.getBoundingClientRect();
+
         const dimensions = {
           width: rect.width,
           height: rect.height

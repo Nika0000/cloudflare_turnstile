@@ -5,7 +5,9 @@ import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/interface.dart';
 import 'package:flutter/material.dart';
 
-class TurnstileController extends ChangeNotifier implements i.TurnstileController<js.JsObject> {
+/// Turnstile controller web implementation.
+class TurnstileController extends ChangeNotifier
+    implements i.TurnstileController<js.JsObject> {
   /// The connector associated with the controller.
   @override
   late js.JsObject connector;
@@ -87,7 +89,8 @@ class TurnstileController extends ChangeNotifier implements i.TurnstileControlle
     if (!_isReady || _widgetId.isEmpty) {
       return true;
     }
-    final result = connector.callMethod('eval', ['''turnstile.isExpired(`$_widgetId`);''']);
+    final result = connector
+        .callMethod('eval', ['''turnstile.isExpired(`$_widgetId`);''']);
     return Future.value(result as bool);
   }
 
