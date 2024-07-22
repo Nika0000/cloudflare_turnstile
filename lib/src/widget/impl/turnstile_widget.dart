@@ -10,6 +10,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
+/// Cloudflare Turnstile mobile implementation
 class CloudFlareTurnstile extends StatefulWidget
     implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
@@ -133,7 +134,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   bool _isWidgetReady = false;
 
-  bool _isWidgetInteractive = false;
+  late bool _isWidgetInteractive;
 
   final double _widgetWidth = TurnstileSize.normal.width;
   double _widgetHeight = TurnstileSize.normal.height;
@@ -257,7 +258,23 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
               );
             }
           },
-          onNavigationRequest: (_) => NavigationDecision.prevent,
+          onNavigationRequest: (request) {
+            if (Platform.isIOS) {
+              final uri = Uri.tryParse(request.url);
+              final baseUri = Uri.tryParse(widget.baseUrl);
+
+              if (uri?.host == 'challenges.cloudflare.com' ||
+                  uri?.host == baseUri?.host ||
+                  request.url == 'about:srcdoc' ||
+                  request.url == 'about:blank') {
+                return NavigationDecision.navigate;
+              } else {
+                return NavigationDecision.prevent;
+              }
+            } else {
+              return NavigationDecision.prevent;
+            }
+          },
           onHttpAuthRequest: (_) => NavigationDecision.prevent,
           onHttpError: (error) {
             if (error.response != null && error.response!.statusCode >= 500) {
@@ -335,7 +352,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   late final Widget _view = WebViewWidget(
     controller: _controller,
-  ).build(context);
+  );
 
   @override
   void dispose() {

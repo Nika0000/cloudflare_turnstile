@@ -46,7 +46,7 @@ class _MyAppState extends State<MyApp> {
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 700),
                     child: _token != null
-                        ? Text(_token!)
+                        ? SelectableText(_token!)
                         : const CircularProgressIndicator(),
                   ),
                   const SizedBox(height: 48.0),

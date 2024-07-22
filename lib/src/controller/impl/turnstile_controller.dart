@@ -91,7 +91,8 @@ class TurnstileController extends ChangeNotifier
       return true;
     }
     final result = await connector.runJavaScriptReturningResult(
-        '''turnstile.isExpired(`$_widgetId`);''') as bool;
+      '''turnstile.isExpired(`$_widgetId`);''',
+    ) as bool;
     return result;
   }
 

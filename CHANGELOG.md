@@ -1,6 +1,11 @@
+## 1.2.4
+
+* Update minimum supported SDK version.
+* Fixed iOS Turnstile challange failure.
+
 ## 1.2.3
 
-* Fixed Mobile Turnstile challange returns 401 error
+* Fixed Mobile Turnstile challange returns 401 error.
 * Fixed Web `TurnstileMode.auto` not working sometimes.
 
 ## 1.2.1
