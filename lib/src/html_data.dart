@@ -65,49 +65,51 @@ String _source = """
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
 
-
+   
 </head>
 
 <body>
    <div id="cf-turnstile"></div>
    <script>
       turnstile.ready(function () {
-           const widgetId = turnstile.render('#cf-turnstile', {
-              sitekey: '<TURNSTILE_SITE_KEY>',
-              action: '<TURNSTILE_ACTION>',
-              cData: '<TURNSTILE_CDATA>',
-              theme: '<TURNSTILE_THEME>',
-              size: '<TURNSTILE_SIZE>',
-              language: '<TURNSTILE_LANGUAGE>',
-              retry: '<TURNSTILE_RETRY>',
-              'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
-              'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
-              'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
-              callback: function (token) {
-                 <TURNSTILE_TOKEN_RECIVED>
-              },
-              'error-callback': function (code) {
-                 <TURNSTILE_ERROR>
-              },
-              'expired-callback': function () {
-                 <TURNSTILE_TOKEN_EXPIRED>
-              }
-           });
+           if (!document.getElementById('cf-turnstile').hasChildNodes()) {
+               const widgetId = turnstile.render('#cf-turnstile', {
+                  sitekey: '<TURNSTILE_SITE_KEY>',
+                  action: '<TURNSTILE_ACTION>',
+                  cData: '<TURNSTILE_CDATA>',
+                  theme: '<TURNSTILE_THEME>',
+                  size: '<TURNSTILE_SIZE>',
+                  language: '<TURNSTILE_LANGUAGE>',
+                  retry: '<TURNSTILE_RETRY>',
+                  'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
+                  'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
+                  'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
+                  callback: function (token) {
+                     <TURNSTILE_TOKEN_RECIVED>
+                  },
+                  'error-callback': function (code) {
+                     <TURNSTILE_ERROR>
+                  },
+                  'expired-callback': function () {
+                     <TURNSTILE_TOKEN_EXPIRED>
+                  }
+               });
 
-           <TURNSTILE_CREATED>
+               <TURNSTILE_CREATED>
+           }
         });
 
        function getWidgetDimensions() {
-        const widgetElement = document.getElementById('cf-turnstile');
-        const rect = widgetElement.getBoundingClientRect();
+           const widgetElement = document.getElementById('cf-turnstile');
+           const rect = widgetElement.getBoundingClientRect();
 
-        const dimensions = {
-          width: rect.width,
-          height: rect.height
-        };
+           const dimensions = {
+               width: rect.width,
+               height: rect.height
+           };
 
-        return JSON.stringify(dimensions) ;
-      };
+           return JSON.stringify(dimensions);
+       };
 
    </script>
    <style>

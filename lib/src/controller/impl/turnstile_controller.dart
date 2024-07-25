@@ -87,7 +87,7 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<bool> isExpired() async {
-    if (!_isReady || _widgetId.isEmpty) {
+    if (!_isReady || _widgetId.isEmpty || token == null || token!.isEmpty) {
       return true;
     }
     final result = await connector.runJavaScriptReturningResult(

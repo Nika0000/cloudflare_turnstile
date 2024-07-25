@@ -135,8 +135,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   late bool _isWidgetInteractive;
 
-  final double _widgetWidth = TurnstileSize.normal.width;
-  double _widgetHeight = TurnstileSize.normal.height;
+  late final double _widgetWidth = widget.options.size.width;
+  late double _widgetHeight = widget.options.size.height;
 
   final String _jsToDartConnectorFN = 'connect_js_to_flutter';
 
@@ -336,8 +336,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   Widget build(BuildContext context) {
     return _isWidgetInteractive
         ? SizedBox(
-            width: TurnstileSize.normal.width,
-            height: TurnstileSize.normal.height,
+            width: widget.options.size.width,
+            height: widget.options.size.height,
             child: AbsorbPointer(
               child: RepaintBoundary(
                 child: OverflowBox(

@@ -136,8 +136,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   late bool _isWidgetInteractive;
 
-  final double _widgetWidth = TurnstileSize.normal.width;
-  double _widgetHeight = TurnstileSize.normal.height;
+  late final double _widgetWidth = widget.options.size.width;
+  late double _widgetHeight = widget.options.size.height;
 
   final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
   final String _errorJSHandler = 'TurnstileError.postMessage(code);';
@@ -363,8 +363,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   Widget build(BuildContext context) {
     return _isWidgetInteractive
         ? SizedBox(
-            width: _isWidgetReady ? TurnstileSize.normal.width : 0,
-            height: _isWidgetReady ? TurnstileSize.normal.height : 0,
+            width: _isWidgetReady ? widget.options.size.width : 0,
+            height: _isWidgetReady ? widget.options.size.height : 0,
             child: Visibility(
               visible: _isWidgetReady,
               child: OverflowBox(

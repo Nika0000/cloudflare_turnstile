@@ -1,3 +1,8 @@
+## 1.2.6
+
+* Fixed Turnstile Widget duplication
+* Fixed `TurnstileSize.compact` widget rendering issue.
+
 ## 1.2.4
 
 * Update minimum supported SDK version.
