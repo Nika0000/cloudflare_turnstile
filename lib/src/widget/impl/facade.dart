@@ -3,13 +3,19 @@ import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 
-/// Facade class
+/// Facade class for Cloudflare Turnstile.
 class CloudFlareTurnstile extends StatelessWidget
     implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
+  ///
+  /// /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
+  /// [mode] defines the Turnstile widget behavior (e.g., managed, non-interactive, or invisible).
+  /// Additional parameters like [action], [cData], [controller], and various options
+  /// customize the widget's behavior.
   CloudFlareTurnstile({
-    super.key,
     required this.siteKey,
+    required this.mode,
+    super.key,
     this.action,
     this.cData,
     this.baseUrl = 'http://localhost/',
@@ -17,7 +23,7 @@ class CloudFlareTurnstile extends StatelessWidget
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
-    this.onError,
+    this.errorBuilder,
   }) : options = options ?? TurnstileOptions();
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -26,6 +32,25 @@ class CloudFlareTurnstile extends StatelessWidget
   /// It`s likely generated or obtained from the CloudFlare dashboard.
   @override
   final String siteKey;
+
+  /// The Turnstile widget mode.
+  ///
+  /// The three available modes are:
+  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
+  /// to decide if an interactive challange should be used. if we show an interaction,
+  /// the user will be prmpted to check a box
+  ///
+  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
+  /// while the browser challanges run. Users will never be required or prompted
+  /// to interact with the widget
+  ///
+  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
+  /// an invisible browser challange is in progress. invisible challanges should take
+  /// a few seconds to complete.
+  ///
+  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
+  @override
+  final i.TurnstileMode mode;
 
   /// A customer value that can be used to differentiate widgets under the
   /// same sitekey in analytics and which is returned upon validation.
@@ -41,15 +66,19 @@ class CloudFlareTurnstile extends StatelessWidget
   @override
   final String? cData;
 
-  /// A base url of turnstile Site
+  /// The base URL of the Turnstile site.
+  ///
+  /// Defaults to 'http://localhost/'.
   @override
   final String baseUrl;
 
-  /// A Turnstile widget options
+  /// Configuration options for the Turnstile widget.
+  ///
+  /// If no options are provided, the default [TurnstileOptions] are used.
   @override
   final TurnstileOptions options;
 
-  /// A controller for an Turnstile widget
+  /// A controller for managing interactions with the Turnstile widget.
   @override
   final TurnstileController<dynamic>? controller;
 
@@ -90,15 +119,15 @@ class CloudFlareTurnstile extends StatelessWidget
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '0x000000000000000000000',
-  ///   onError: (String error) {
-  ///     print('Error: $error');
+  ///   errorBuilder: (context, error) {
+  ///     return Text(error.message);
   ///   },
   /// ),
   /// ```
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
-  final i.OnError? onError;
+  final i.ErrorBuilder? errorBuilder;
 
   @override
   Widget build(BuildContext context) {

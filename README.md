@@ -32,9 +32,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: CloudFlareTurnstile(
-          siteKey: '0x0000000000000000000000', //Change with your site key
+        child: Turnstile(
+          siteKey: '3x00000000000000000000FF', //Change with your site key
           baseUrl: 'http://localhost/',
+          mode: TurnstileMode.managed,
           onTokenRecived: (token) {
             print(token);
           },
@@ -50,7 +51,6 @@ class MyApp extends StatelessWidget {
 
 ```dart
 final TurnstileOptions options = const TurnstileOptions(
-  mode: TurnstileMode.managed,
   size: TurnstileSize.normal,
   theme: TurnstileTheme.light,
   language: 'ar',
@@ -60,11 +60,15 @@ final TurnstileOptions options = const TurnstileOptions(
 
 //...
 
-CloudflareTurnstile(
-  sitekey: '0x0000000000000000000000',
+Turnstile(
+  sitekey: '3x00000000000000000000FF',
   options: options,
+  mode: TurnstileMode.managed,
 );
 ```
+
+## Contribution
+Your contributions are welcome and greatly valued! If you have ideas, suggestions, or improvements, feel free to open an issue or submit a pull request. Every bit of help is appreciated, and your input can make a big difference. Just ensure your contributions fit with the project's goals and guidelines.
 
 ## License
 

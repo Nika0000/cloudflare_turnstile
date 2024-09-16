@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:io';
 
-import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
+import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller.dart';
 import 'package:cloudflare_turnstile/src/html_data.dart';
+import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
-import 'package:flutter/foundation.dart';
+import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -15,8 +18,9 @@ class CloudFlareTurnstile extends StatefulWidget
     implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
-    super.key,
     required this.siteKey,
+    required this.mode,
+    super.key,
     this.action,
     this.cData,
     this.baseUrl = 'http://localhost/',
@@ -24,7 +28,7 @@ class CloudFlareTurnstile extends StatefulWidget
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
-    this.onError,
+    this.errorBuilder,
   }) : options = options ?? TurnstileOptions() {
     if (action != null) {
       assert(
@@ -39,6 +43,30 @@ class CloudFlareTurnstile extends StatefulWidget
         'action must be contain up to 32 characters including _ and -.',
       );
     }
+
+    assert(
+      this.options.retryInterval.inMilliseconds > 0 &&
+          this.options.retryInterval.inMilliseconds <= 900000,
+      'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.invisible &&
+          this.options.refreshExpired == TurnstileRefreshExpired.manual),
+      '${this.options.refreshExpired} is impossible in $mode, consider using TurnstileRefreshExpired.auto or TurnstileRefreshExpired.never',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.invisible &&
+          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      '${this.options.refreshTimeout} has no effect on an $mode widget.',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.nonInteractive &&
+          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      '${this.options.refreshTimeout} has no effect on an $mode widget.',
+    );
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -47,6 +75,25 @@ class CloudFlareTurnstile extends StatefulWidget
   /// It`s likely generated or obtained from the CloudFlare dashboard.
   @override
   final String siteKey;
+
+  /// The Turnstile widget mode.
+  ///
+  /// The three available modes are:
+  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
+  /// to decide if an interactive challange should be used. if we show an interaction,
+  /// the user will be prmpted to check a box
+  ///
+  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
+  /// while the browser challanges run. Users will never be required or prompted
+  /// to interact with the widget
+  ///
+  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
+  /// an invisible browser challange is in progress. invisible challanges should take
+  /// a few seconds to complete.
+  ///
+  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
+  @override
+  final i.TurnstileMode mode;
 
   /// A customer value that can be used to differentiate widgets under the
   /// same sitekey in analytics and which is returned upon validation.
@@ -62,20 +109,24 @@ class CloudFlareTurnstile extends StatefulWidget
   @override
   final String? cData;
 
-  /// A base url of turnstile Site
+  /// The base URL of the Turnstile site.
+  ///
+  /// Defaults to 'http://localhost/'.
   @override
   final String baseUrl;
 
-  /// A Turnstile widget options
+  /// Configuration options for the Turnstile widget.
+  ///
+  /// If no options are provided, the default [TurnstileOptions] are used.
   @override
   final TurnstileOptions options;
 
-  /// A controller for an Turnstile widget
+  /// A controller for managing interactions with the Turnstile widget.
   @override
   final TurnstileController? controller;
 
   /// A Callback invoked upon success of the challange.
-  /// The callback is passed a [token] that can be validated.
+  /// The callback is passed a `token` that can be validated.
   ///
   /// example:
   /// ```dart
@@ -107,19 +158,24 @@ class CloudFlareTurnstile extends StatefulWidget
   /// A Callback invoke when there is an error
   /// (e.g network error or challange failed).
   ///
+  /// This widget will only be displayed if the TurnstileException's `retryable`
+  /// property is set to `true`. For non-retriable errors, this callback may still
+  /// be invoked, but the display or handling of these errors might be managed
+  /// internally by the Turnstile widget or handled differently.
+  ///
   /// example:
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '0x000000000000000000000',
-  ///   onError: (String error) {
-  ///     print('Error: $error');
+  ///   errorBuilder: (context, error) {
+  ///     return Text(error.message);
   ///   },
   /// ),
   /// ```
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
-  final i.OnError? onError;
+  final i.ErrorBuilder? errorBuilder;
 
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
@@ -133,10 +189,13 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   String? widgetId;
 
   bool _isWidgetReady = false;
+  TurnstileException? _hasError;
 
   late bool _isWidgetInteractive;
 
-  late final double _widgetWidth = widget.options.size.width;
+  late double _widgetWidth = widget.options.size == TurnstileSize.flexible
+      ? TurnstileSize.normal.width
+      : widget.options.size.width;
   late double _widgetHeight = widget.options.size.height;
 
   final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
@@ -149,7 +208,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   void initState() {
     super.initState();
 
-    _isWidgetInteractive = widget.options.mode != TurnstileMode.invisible;
+    _isWidgetInteractive = widget.mode != i.TurnstileMode.invisible;
 
     if (widget.options.theme == TurnstileTheme.auto) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -194,68 +253,71 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
+      ..clearCache()
       ..setOnConsoleMessage((mes) {
         if (mes.level == JavaScriptLogLevel.warning) {
           if (mes.message.contains(RegExp('Turnstile'))) {
-            if (kDebugMode) {
-              debugPrint(mes.message);
-            }
+            final description = mes.message.split('] ')[1];
+            dev.log(description, level: 800, name: 'cloudflare_turnstile');
           }
         }
       })
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (c) async {
-            if (widget.options.mode == TurnstileMode.auto) {
-              final jsonFormatRegex = RegExp(r'^"|"$|\\');
+            var attemps = 0;
 
-              final result = await _controller.runJavaScriptReturningResult(
-                '''getWidgetDimensions()''',
-              );
+            Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+              attemps++;
 
-              final jsonData = result.toString();
+              if (_isWidgetReady) return timer.cancel();
 
-              final jsonWithoutOuterQuotes = jsonData.replaceAll(
-                jsonFormatRegex,
-                '',
-              );
+              await _getWidgetDimension();
 
-              final size = jsonDecode(jsonWithoutOuterQuotes);
+              if (attemps >= 3) {
+                timer.cancel();
 
-              //double width = size['width'].toDouble();
-              final height = double.parse(size['height'].toString());
-
-              setState(() {
-                if (height > 0) {
-                  //_widgetWidth = width;
-                  _widgetHeight = height;
-                  _isWidgetInteractive = true;
-                } else {
-                  _isWidgetInteractive = false;
+                if (!_isWidgetReady) {
+                  dev.log(
+                    'Widget mode mismatch: The current widget mode is ${widget.mode.name}, which may not match the mode set in the Cloudflare Turnstile dashboard. Please verify the widget mode in the Cloudflare dashboard settings.',
+                    name: 'cloudflare_turnstile',
+                    level: 800,
+                  );
                 }
 
-                _isWidgetReady = true;
+                setState(() => _isWidgetReady = true);
                 widget.controller?.isWidgetReady = _isWidgetReady;
-              });
-            } else {
-              setState(() {
-                if (widget.options.mode != TurnstileMode.invisible) {
-                  _widgetHeight = _widgetHeight + 5.0;
-                }
-                _isWidgetReady = true;
-                widget.controller?.isWidgetReady = _isWidgetReady;
-              });
+              }
+            });
+
+            // TODO: The current method for handling flexible sizes by injecting
+            // custom styles is not ideal and needs improvement.
+            if (widget.options.size == TurnstileSize.flexible) {
+              await _controller.runJavaScript("""
+                const style = document.createElement('style');
+                style.innerHTML = `
+                  #cf-turnstile {
+                      width: calc(100% - 3px);
+                      margin: auto;
+                  }
+                `;
+                document.head.appendChild(style);
+              """);
             }
           },
+          onPageStarted: (_) => _resetWidget(),
           onWebResourceError: (error) {
             if (error.errorType == WebResourceErrorType.hostLookup) {
               setState(() {
+                _hasError = const TurnstileException(
+                  'Server or proxy hostname lookup failed.',
+                );
+
+                widget.controller?.error = _hasError;
+
                 _isWidgetReady = false;
                 widget.controller?.isWidgetReady = _isWidgetReady;
               });
-              widget.onError?.call(
-                '[Cloudflare Turnstile] Failed to initialize Turnstile Widget: Server or proxy hostname lookup failed.',
-              );
             }
           },
           onNavigationRequest: (request) {
@@ -279,12 +341,13 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
           onHttpError: (error) {
             if (error.response != null && error.response!.statusCode >= 500) {
               setState(() {
+                _hasError = TurnstileException(
+                  'Server returned HTTP status ${error.response!.statusCode}',
+                );
                 _isWidgetReady = false;
+                widget.controller?.error = _hasError;
                 widget.controller?.isWidgetReady = _isWidgetReady;
               });
-              widget.onError?.call(
-                '[Cloudflare Turnstile] Failed to initialize Turnstile Widget:\nStatus Code: ${error.response!.statusCode}\nURL: ${error.response!.uri.toString()}',
-              );
             }
           },
         ),
@@ -311,6 +374,42 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     );
   }
 
+  FutureOr<void> _getWidgetDimension() async {
+    if (_isWidgetReady) {
+      return;
+    }
+
+    final jsonFormatRegex = RegExp(r'^"|"$|\\');
+
+    final result = await _controller.runJavaScriptReturningResult(
+      '''getWidgetDimensions()''',
+    );
+
+    final jsonData = result.toString();
+
+    final jsonWithoutOuterQuotes = jsonData.replaceAll(
+      jsonFormatRegex,
+      '',
+    );
+
+    final size = jsonDecode(jsonWithoutOuterQuotes) as Map<String, dynamic>?;
+    if (size == null) return;
+
+    final height = double.parse(size['height'].toString());
+    final width = double.parse(size['width'].toString());
+
+    if (widget.mode != i.TurnstileMode.invisible) {
+      if (height <= 0) return;
+      _widgetHeight = height;
+      _widgetWidth = width;
+    } else {
+      if (height > 0) return;
+    }
+
+    setState(() => _isWidgetReady = true);
+    widget.controller?.isWidgetReady = _isWidgetReady;
+  }
+
   void _createChannels() {
     _controller
       ..addJavaScriptChannel(
@@ -323,7 +422,9 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       ..addJavaScriptChannel(
         'TurnstileError',
         onMessageReceived: (message) {
-          widget.onError?.call(message.message);
+          if (_hasError != null) return;
+          final errorCode = int.tryParse(message.message) ?? -1;
+          _addError(TurnstileException.fromCode(errorCode));
         },
       )
       ..addJavaScriptChannel(
@@ -334,20 +435,45 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         },
       )
       ..addJavaScriptChannel(
-        'TurnstileReady',
-        onMessageReceived: (message) {
-          setState(() {
-            _isWidgetReady = true;
-            widget.controller?.isWidgetReady = _isWidgetReady;
-          });
-        },
-      )
-      ..addJavaScriptChannel(
         'TokenExpired',
         onMessageReceived: (message) {
           widget.onTokenExpired?.call();
         },
       );
+  }
+
+  void _resetWidget() {
+    setState(() {
+      _hasError = null;
+      _isWidgetReady = false;
+      widget.controller?.error = null;
+      widget.controller?.isWidgetReady = false;
+    });
+  }
+
+  void _addError(TurnstileException error) {
+    setState(() {
+      _hasError = error;
+      _isWidgetReady = error.retryable;
+      widget.controller?.error = error;
+      widget.controller?.isWidgetReady = error.retryable;
+    });
+  }
+
+  Offset _getCorrectSize(double width, double height) {
+    var dx = _widgetWidth - width;
+    var dy = _widgetHeight - height;
+
+    if (widget.options.size == TurnstileSize.flexible) {
+      if (_widgetWidth <= TurnstileSize.normal.width) {
+        dx = (TurnstileSize.normal.width - _widgetWidth).ceilToDouble();
+      }
+    }
+
+    if (dx < 0) dx = 0;
+    if (dy < 0) dy = 0;
+
+    return Offset(dx, dy);
   }
 
   late final Widget _view = WebViewWidget(
@@ -361,22 +487,45 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   @override
   Widget build(BuildContext context) {
-    return _isWidgetInteractive
-        ? SizedBox(
-            width: _isWidgetReady ? widget.options.size.width : 0,
-            height: _isWidgetReady ? widget.options.size.height : 0,
-            child: Visibility(
-              visible: _isWidgetReady,
-              child: OverflowBox(
-                alignment: Alignment.topCenter,
-                maxHeight: _isWidgetReady ? _widgetHeight : 0,
-                maxWidth: _isWidgetReady ? _widgetWidth : 0,
-                child: _view,
-              ),
-            ),
-          )
-        : SizedBox.shrink(
-            child: _view,
+    // Return the custom error widget if the error is retriable or if the
+    // Turnstile widget does not have a built-in method for displaying errors.
+    // Otherwise, return an empty widget.
+    if (_hasError != null) {
+      if (_hasError!.retryable && widget.mode != i.TurnstileMode.invisible) {
+        widget.errorBuilder?.call(context, _hasError!);
+      } else {
+        return widget.errorBuilder?.call(context, _hasError!) ??
+            const SizedBox.shrink();
+      }
+    }
+
+    if (!_isWidgetInteractive) {
+      return SizedBox.shrink(
+        child: _view,
+      );
+    }
+
+    return SizedBox(
+      width: widget.options.size.width,
+      height: widget.options.size.height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final offset = _getCorrectSize(
+            constraints.maxWidth,
+            widget.options.size.height,
           );
+
+          return OverflowBox(
+            alignment: Alignment.topCenter,
+            maxWidth: constraints.maxWidth + offset.dx,
+            maxHeight: widget.options.size.height + offset.dy,
+            child: Opacity(
+              opacity: _isWidgetReady ? 1.0 : 0.0,
+              child: _view,
+            ),
+          );
+        },
+      ),
+    );
   }
 }

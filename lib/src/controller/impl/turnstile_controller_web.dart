@@ -2,7 +2,7 @@
 import 'dart:js' as js;
 
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
-import 'package:cloudflare_turnstile/src/widget/interface.dart';
+import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:flutter/material.dart';
 
 /// Turnstile controller web implementation.
@@ -14,9 +14,35 @@ class TurnstileController extends ChangeNotifier
 
   String? _token;
 
+  TurnstileException? _error;
+
   String _widgetId = '';
 
   bool _isReady = false;
+
+  /// Retrives the current token from the widget.
+  ///
+  /// Returns `null` if no token is available.
+  @override
+  String? get token => _token;
+
+  /// Retrives the current widget ID.
+  ///
+  /// This ID is used to uniquely identify the Turnstile widget instance.
+  @override
+  String get widgetId => _widgetId;
+
+  /// Retrieves the widget's ready state.
+  ///
+  /// Returns `true` if the widget is ready for interaction, otherwise `false`.
+  @override
+  bool get isWidgetReady => _isReady;
+
+  /// Retrieves the current error state of the Turnstile widget, if any.
+  ///
+  /// Returns a [TurnstileException] object if an error exists, otherwise `null`
+  @override
+  TurnstileException? get error => _error;
 
   /// Sets a new connector.
   @override
@@ -24,32 +50,54 @@ class TurnstileController extends ChangeNotifier
     connector = newConnector;
   }
 
-  /// Get current token
-  @override
-  String? get token => _token;
-
   /// Sets a new token.
+  ///
+  /// Use this method to manually set or override the current token value.
   @override
   set token(String? token) {
     _token = token;
+
+    if (token != null && token.isNotEmpty) {
+      _onTokenRecived?.call(token);
+    }
+
     notifyListeners();
   }
 
-  /// Get a current widget id
+  /// Sets the Turnstile widget ID.
+  ///
+  /// This assigns a new ID to the current Turnstile widget instance.
   @override
-  String get widgetId => _widgetId;
+  set widgetId(String id) {
+    if (_widgetId != id) {
+      _widgetId = id;
+      notifyListeners();
+    }
+  }
 
-  /// Sets the Turnstile current widget id.
+  /// Sets the widget's ready state.
+  ///
+  /// Use this to indicate whether the widget is ready for interaction.
   @override
-  set widgetId(String id) => _widgetId = id;
+  set isWidgetReady(bool isReady) {
+    if (_isReady != isReady) {
+      _isReady = isReady;
+      notifyListeners();
+    }
+  }
 
-  /// Get a current widget is ready
+  /// Sets the error state for the Turnstile widget.
+  ///
+  /// This method updates the error state of the widget, allowing it to
+  /// reflect the current issue encountered.
   @override
-  bool get isWidgetReady => _isReady;
-
-  /// Sets a Widget is ready
-  @override
-  set isWidgetReady(bool isReady) => _isReady = isReady;
+  set error(TurnstileException? error) {
+    _error = error;
+    if (error != null) {
+      _onError?.call(error);
+    }
+    notifyListeners();
+  }
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed.
@@ -65,13 +113,17 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<void> refreshToken() async {
-    _token = null;
-    await connector.callMethod('eval', ['''turnstile.reset(`$_widgetId`);''']);
+    try {
+      await connector
+          .callMethod('eval', ['''turnstile.reset(`$_widgetId`);''']);
+      _token = null;
+    } catch (error) {
+      if (_onError == null) rethrow;
+      _onError?.call(TurnstileException('Failed to refresh token: $error'));
+    }
   }
 
-  /// The function that check if a widget has expired by either
-  /// subscription to the [OnTokenExpired] or using isExpired();
-  /// function, which returns true if the widget is expired.
+  /// The function that check if a widget has expired.
   ///
   /// This method can only be called when [widgetId] is not null.
   ///
@@ -98,5 +150,48 @@ class TurnstileController extends ChangeNotifier
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Function(TurnstileException error)? _onError;
+  Function(String token)? _onTokenRecived;
+
+  /// Registers a callback to be invoked when an error occurs.
+  ///
+  /// The [callback] function is invoked whenever an error arises in processes
+  /// like token fetching or widget initialization. This is essential for
+  /// handling issues such as network failures or invalid tokens.
+  ///
+  /// This method helps in capturing and responding errors.
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize controller
+  /// TurnstileController controller = TurnstileController();
+  ///
+  /// controller.onError((error) {
+  ///   print('Error: $error');
+  /// });
+  /// ```
+  @override
+  void onError(Function(TurnstileException error) callback) {
+    _onError = callback;
+  }
+
+  /// Registers a callback to be invoked when a new `token` is
+  /// successfully received.
+  ///
+  /// Use this method to track when new tokens are generated.
+  ///
+  /// example:
+  /// ```dart
+  /// TurnstileController controller = TurnstileController();
+  ///
+  /// controller.onTokenRecived((token) {
+  ///   print('New token: $token');
+  /// });
+  /// ```
+  @override
+  void onTokenRecived(Function(String token) callback) {
+    _onTokenRecived = callback;
   }
 }

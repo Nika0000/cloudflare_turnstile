@@ -2,12 +2,14 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:ui_web' as ui;
 
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_web.dart';
 import 'package:cloudflare_turnstile/src/html_data.dart';
+import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +18,14 @@ import 'package:flutter/material.dart';
 class CloudFlareTurnstile extends StatefulWidget
     implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
+  ///
+  /// /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
+  /// [mode] defines the Turnstile widget behavior (e.g., managed, non-interactive, or invisible).
+  /// Additional parameters like [action], [cData], [controller], and various options
+  /// customize the widget's behavior.
   CloudFlareTurnstile({
     required this.siteKey,
+    required this.mode,
     super.key,
     this.action,
     this.cData,
@@ -26,7 +34,7 @@ class CloudFlareTurnstile extends StatefulWidget
     this.controller,
     this.onTokenRecived,
     this.onTokenExpired,
-    this.onError,
+    this.errorBuilder,
   }) : options = options ?? TurnstileOptions() {
     if (action != null) {
       assert(
@@ -41,6 +49,30 @@ class CloudFlareTurnstile extends StatefulWidget
         'action must be contain up to 32 characters including _ and -.',
       );
     }
+
+    assert(
+      this.options.retryInterval.inMilliseconds > 0 &&
+          this.options.retryInterval.inMilliseconds <= 900000,
+      'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.invisible &&
+          this.options.refreshExpired == TurnstileRefreshExpired.manual),
+      '${this.options.refreshExpired} is impossible in $mode, consider using TurnstileRefreshExpired.auto or TurnstileRefreshExpired.never',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.invisible &&
+          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      '${this.options.refreshTimeout} has no effect on an $mode widget.',
+    );
+
+    assert(
+      !(mode == i.TurnstileMode.nonInteractive &&
+          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      '${this.options.refreshTimeout} has no effect on an $mode widget.',
+    );
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -49,6 +81,25 @@ class CloudFlareTurnstile extends StatefulWidget
   /// It`s likely generated or obtained from the CloudFlare dashboard.
   @override
   final String siteKey;
+
+  /// The Turnstile widget mode.
+  ///
+  /// The three available modes are:
+  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
+  /// to decide if an interactive challange should be used. if we show an interaction,
+  /// the user will be prmpted to check a box
+  ///
+  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
+  /// while the browser challanges run. Users will never be required or prompted
+  /// to interact with the widget
+  ///
+  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
+  /// an invisible browser challange is in progress. invisible challanges should take
+  /// a few seconds to complete.
+  ///
+  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
+  @override
+  final i.TurnstileMode mode;
 
   /// A customer value that can be used to differentiate widgets under the
   /// same sitekey in analytics and which is returned upon validation.
@@ -64,20 +115,24 @@ class CloudFlareTurnstile extends StatefulWidget
   @override
   final String? cData;
 
-  /// A base url of turnstile Site
+  /// The base URL of the Turnstile site.
+  ///
+  /// Defaults to 'http://localhost/'.
   @override
   final String baseUrl;
 
-  /// A Turnstile widget options
+  /// Configuration options for the Turnstile widget.
+  ///
+  /// If no options are provided, the default [TurnstileOptions] are used.
   @override
   final TurnstileOptions options;
 
-  /// A controller for an Turnstile widget
+  /// A controller for managing interactions with the Turnstile widget.
   @override
   final TurnstileController? controller;
 
   /// A Callback invoked upon success of the challange.
-  /// The callback is passed a [token] that can be validated.
+  /// The callback is passed a `token` that can be validated.
   ///
   /// example:
   /// ```dart
@@ -109,19 +164,24 @@ class CloudFlareTurnstile extends StatefulWidget
   /// A Callback invoke when there is an error
   /// (e.g network error or challange failed).
   ///
+  /// This widget will only be displayed if the TurnstileException's `retryable`
+  /// property is set to `true`. For non-retriable errors, this callback may still
+  /// be invoked, but the display or handling of these errors might be managed
+  /// internally by the Turnstile widget or handled differently.
+  ///
   /// example:
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '0x000000000000000000000',
-  ///   onError: (String error) {
-  ///     print('Error: $error');
+  ///   errorBuilder: (context, error) {
+  ///     return Text(error.message);
   ///   },
   /// ),
   /// ```
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
-  final i.OnError? onError;
+  final i.ErrorBuilder? errorBuilder;
 
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
@@ -134,8 +194,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   late js.JsObject jsWindowObject;
 
   late bool _isWidgetInteractive;
-
-  late final double _widgetWidth = widget.options.size.width;
   late double _widgetHeight = widget.options.size.height;
 
   final String _jsToDartConnectorFN = 'connect_js_to_flutter';
@@ -143,12 +201,13 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   String? widgetId;
 
   bool _isWidgetReady = false;
+  TurnstileException? _hasError;
 
   @override
   void initState() {
     super.initState();
 
-    _isWidgetInteractive = widget.options.mode == TurnstileMode.managed;
+    _isWidgetInteractive = widget.mode != i.TurnstileMode.invisible;
 
     if (widget.options.theme == TurnstileTheme.auto) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -165,14 +224,12 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     _connectJsToFlutter();
     _registerView(iframeViewType);
 
-    Future.delayed(Duration.zero, () {
-      _updateSource();
-      _registerIframeOnLoadCallBack();
-    });
+    _updateSource();
+    _registerIframeOnLoadCallBack();
   }
 
   String _createViewType() {
-    final iframeId = '_${DateTime.now().microsecondsSinceEpoch.toString()}';
+    final iframeId = '_${DateTime.now().microsecondsSinceEpoch}';
     return '_iframe$iframeId';
   }
 
@@ -191,43 +248,62 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   }
 
   void _registerIframeOnLoadCallBack() {
-    iframeOnLoadSubscription = iframe.onLoad.listen((event) async {
-      Future.delayed(Duration.zero, _detectWidgetMode);
+    var attemps = 0;
+
+    _resetWidget();
+
+    iframeOnLoadSubscription = iframe.onLoad.listen((event) {
+      Timer.periodic(
+        const Duration(milliseconds: 100),
+        (timer) async {
+          attemps++;
+
+          if (_isWidgetReady) return timer.cancel();
+
+          await _getWidgetDimension();
+
+          if (attemps >= 3) {
+            timer.cancel();
+
+            if (!_isWidgetReady) {
+              dev.log(
+                'Widget mode mismatch: The current widget mode is ${widget.mode.name}, which may not match the mode set in the Cloudflare Turnstile dashboard. Please verify the widget mode in the Cloudflare dashboard settings.',
+                name: 'cloudflare_turnstile',
+                level: 800,
+              );
+            }
+
+            setState(() => _isWidgetReady = true);
+            widget.controller?.isWidgetReady = _isWidgetReady;
+          }
+        },
+      );
     });
   }
 
-  Future<void> _detectWidgetMode() async {
-    if (widget.options.mode == TurnstileMode.auto) {
-      final result = jsWindowObject.callMethod(
-        'eval',
-        ['''getWidgetDimensions();'''],
-      );
-
-      await Future.value(result).then((val) {
-        final size = jsonDecode(val as String);
-
-        // double width = size['width'];
-        final height = size['height'] as double;
-
-        setState(
-          () {
-            // check if widget have visible content
-            if (height > 0) {
-              // _widgetWidth = width;
-              _widgetHeight = height;
-              _isWidgetInteractive = true;
-            } else {
-              _isWidgetInteractive = false;
-            }
-
-            _isWidgetReady = true;
-          },
-        );
-      });
-    } else {
-      setState(() => _isWidgetReady = true);
+  FutureOr<void> _getWidgetDimension() async {
+    if (_isWidgetReady) {
+      return;
     }
 
+    final result = jsWindowObject.callMethod(
+      'eval',
+      ['''getWidgetDimensions();'''],
+    );
+
+    final val = await Future.value(result) as String;
+    final size = jsonDecode(val) as Map<String, dynamic>;
+
+    final height = double.parse(size['height'].toString());
+
+    if (widget.mode != i.TurnstileMode.invisible) {
+      if (height <= 0) return;
+      _widgetHeight = height.ceilToDouble();
+    } else {
+      if (height > 0) return;
+    }
+
+    setState(() => _isWidgetReady = true);
     widget.controller?.isWidgetReady = _isWidgetReady;
   }
 
@@ -241,7 +317,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       };
 
       jsWindowObject['TurnstileError'] = (String message) {
-        widget.onError?.call(message);
+        final errorCode = int.tryParse(message) ?? -1;
+        _addError(TurnstileException.fromCode(errorCode));
       };
 
       jsWindowObject['TurnstileWidgetId'] = (String message) {
@@ -320,6 +397,24 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     return '$splitSource1$whatToEmbed\n$splitSource2';
   }
 
+  void _resetWidget() {
+    setState(() {
+      _hasError = null;
+      _isWidgetReady = false;
+      widget.controller?.error = null;
+      widget.controller?.isWidgetReady = false;
+    });
+  }
+
+  void _addError(TurnstileException error) {
+    setState(() {
+      _hasError = error;
+      _isWidgetReady = error.retryable;
+      widget.controller?.error = error;
+      widget.controller?.isWidgetReady = error.retryable;
+    });
+  }
+
   late final Widget _view = HtmlElementView(
     key: widget.key,
     viewType: iframeViewType,
@@ -334,25 +429,39 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   @override
   Widget build(BuildContext context) {
-    return _isWidgetInteractive
-        ? SizedBox(
-            width: widget.options.size.width,
-            height: widget.options.size.height,
-            child: AbsorbPointer(
-              child: RepaintBoundary(
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  maxWidth: _widgetWidth,
-                  maxHeight: _widgetHeight,
-                  child: _view,
-                ),
-              ),
-            ),
-          )
-        : SizedBox(
-            width: 0.01,
-            height: 0.01,
+    // Return the custom error widget if the error is retriable or if the
+    // Turnstile widget does not have a built-in method for displaying errors.
+    // Otherwise, return an empty widget.
+    if (_hasError != null) {
+      if (_hasError!.retryable && widget.mode != i.TurnstileMode.invisible) {
+        widget.errorBuilder?.call(context, _hasError!);
+      } else {
+        // call only when turnstile dont have buildin method to display error
+        return widget.errorBuilder?.call(context, _hasError!) ??
+            const SizedBox();
+      }
+    }
+
+    if (!_isWidgetInteractive) {
+      return SizedBox(
+        width: 0.01,
+        height: 0.01,
+        child: _view,
+      );
+    }
+
+    return SizedBox(
+      width: widget.options.size.width,
+      height: widget.options.size.height,
+      child: AbsorbPointer(
+        child: RepaintBoundary(
+          child: OverflowBox(
+            alignment: Alignment.topCenter,
+            maxHeight: _widgetHeight,
             child: _view,
-          );
+          ),
+        ),
+      ),
+    );
   }
 }

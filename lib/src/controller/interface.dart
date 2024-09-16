@@ -1,30 +1,53 @@
-import 'package:cloudflare_turnstile/src/widget/interface.dart';
+import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 
-/// Interface for controller
+/// Interface for the Turnstile Controller.
 abstract class TurnstileController<T> {
-  /// The connector associated with the controller.
+  /// The connector associated with this controller.
   late T connector;
 
-  /// Get current token.
+  /// Retrives the current token from the widget.
+  ///
+  /// Returns `null` if no token is available.
   String? get token;
+
+  /// Retrives the current widget ID.
+  ///
+  /// This ID is used to uniquely identify the Turnstile widget instance.
+  String get widgetId;
+
+  /// Retrieves the widget's ready state.
+  ///
+  /// Returns `true` if the widget is ready for interaction, otherwise `false`.
+  bool get isWidgetReady;
+
+  /// Retrieves the current error state of the Turnstile widget, if any.
+  ///
+  /// Returns a [TurnstileException] object if an error exists, otherwise `null`
+  TurnstileException? get error;
 
   /// Sets a new connector.
   void setConnector(T newConnector);
 
   /// Sets a new token.
+  ///
+  /// Use this method to manually set or override the current token value.
   set token(String? token);
 
-  /// Get a current widget id
-  String get widgetId;
+  /// Sets the Turnstile widget ID.
+  ///
+  /// This assigns a new ID to the current Turnstile widget instance.
+  set widgetId(String id);
 
-  /// Get a current widget is ready
-  bool get isWidgetReady;
-
-  /// Sets a Widget is ready
+  /// Sets the widget's ready state.
+  ///
+  /// Use this to indicate whether the widget is ready for interaction.
   set isWidgetReady(bool isReady);
 
-  /// Sets the Turnstile current widget id.
-  set widgetId(String id);
+  /// Sets the error state for the Turnstile widget.
+  ///
+  /// This method updates the error state of the widget, allowing it to
+  /// reflect the current issue encountered.
+  set error(TurnstileException? error);
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed.
@@ -40,9 +63,7 @@ abstract class TurnstileController<T> {
   /// ```
   Future<void> refreshToken();
 
-  /// The function that check if a widget has expired by either
-  /// subscription to the [OnTokenExpired] or using isExpired();
-  /// function, which returns true if the widget is expired.
+  /// The function that check if a widget has expired.
   ///
   /// This method can only be called when [widgetId] is not null.
   ///
@@ -56,4 +77,38 @@ abstract class TurnstileController<T> {
   /// print(isTokenExpired);
   /// ```
   Future<bool> isExpired();
+
+  /// Registers a callback to be invoked when an error occurs.
+  ///
+  /// The [callback] function is invoked whenever an error arises in processes
+  /// like token fetching or widget initialization. This is essential for
+  /// handling issues such as network failures or invalid tokens.
+  ///
+  /// This method helps in capturing and responding errors.
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize controller
+  /// TurnstileController controller = TurnstileController();
+  ///
+  /// controller.onError((error) {
+  ///   print('Error: $error');
+  /// });
+  /// ```
+  void onError(Function(TurnstileException error) callback);
+
+  /// Registers a callback to be invoked when a new `token` is
+  /// successfully received.
+  ///
+  /// Use this method to track when new tokens are generated.
+  ///
+  /// example:
+  /// ```dart
+  /// TurnstileController controller = TurnstileController();
+  ///
+  /// controller.onTokenRecived((token) {
+  ///   print('New token: $token');
+  /// });
+  /// ```
+  void onTokenRecived(Function(String token) callback);
 }

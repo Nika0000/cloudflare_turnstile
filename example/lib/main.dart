@@ -15,11 +15,10 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final TurnstileController _controller = TurnstileController();
   final TurnstileOptions _options = TurnstileOptions(
-    mode: TurnstileMode.auto,
     size: TurnstileSize.normal,
     theme: TurnstileTheme.light,
     refreshExpired: TurnstileRefreshExpired.manual,
-    language: 'ru',
+    language: 'en',
     retryAutomatically: false,
   );
 
@@ -52,6 +51,7 @@ class _MyAppState extends State<MyApp> {
                   const SizedBox(height: 48.0),
                   CloudFlareTurnstile(
                     siteKey: '3x00000000000000000000FF',
+                    mode: TurnstileMode.managed,
                     options: _options,
                     controller: _controller,
                     onTokenRecived: (token) {
@@ -60,10 +60,8 @@ class _MyAppState extends State<MyApp> {
                       });
                     },
                     onTokenExpired: () {},
-                    onError: (error) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
+                    errorBuilder: (context, error) {
+                      return Text(error.message);
                     },
                   ),
                   const SizedBox(height: 48.0),

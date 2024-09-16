@@ -84,6 +84,7 @@ String _source = """
                   'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
                   'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
                   'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
+                  'feedback-enabled': false,
                   callback: function (token) {
                      <TURNSTILE_TOKEN_RECIVED>
                   },

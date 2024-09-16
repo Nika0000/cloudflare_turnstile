@@ -1,3 +1,13 @@
+## 2.0.0
+
+* Added support for new `flexible` widget size.
+* Added notifications for mode mismatches between the widget and Cloudflare Turnstile dashboard settings.
+* Added error callback and token callback to `TurnstileController`.
+* Added `TurnstileException` for improved error management.
+* Fixed issue when the widget was not displayed on the first build.
+* Removed automatic detection of widget mode.
+* Updated documentation for clarity and accuracy.
+
 ## 1.2.6
 
 * Fixed Turnstile Widget duplication
