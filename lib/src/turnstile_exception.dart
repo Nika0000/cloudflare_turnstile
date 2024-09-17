@@ -105,12 +105,16 @@ class TurnstileException implements Exception {
       case 200100:
         errorType = TurnstileError.TIME_PROBLEM;
         message = 'The visitor’s clock is incorrect.';
-      case var _ when code >= 300000 && code < 600000:
+      case var _ when code >= 300000 && code < 301000:
         retryable = true;
         errorType = TurnstileError.GENERIC_CLIENT_EXECUTION;
         message =
             'An unspecified error occurred in the visitor while they were solving a challenge.';
-      case var _ when code >= 600000:
+      case var _ when code >= 400000 && code < 401000:
+        errorType = TurnstileError.INCORRECT_CONFIGURATION;
+        message =
+            'The configuration for Turnstile is incorrect or incomplete. Check the site key, secret key, and domain setup.';
+      case var _ when code >= 600000 && code < 601000:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_EXECUTIION_FAILURE;
         message =
@@ -189,6 +193,9 @@ enum TurnstileError {
 
   /// The user-agent provided by the visitor was inconsistent during the challenge.
   INCONSISTENT_USER_AGENT,
+
+  /// The configuration for Turnstile is incorrect or incomplete.
+  INCORRECT_CONFIGURATION,
 
   /// The challenge timed out before the visitor could solve it.
   CHALLANGE_TIMED_OUT,

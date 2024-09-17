@@ -1,3 +1,8 @@
+## 2.0.1
+
+* Added handle incorrect configuration errors
+* Update code documentation
+
 ## 2.0.0
 
 * Added support for new `flexible` widget size.

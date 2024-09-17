@@ -104,7 +104,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// CloudFlareTurnstile(
-  ///   siteKey: '0x000000000000000000000',
+  ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenRecived: (String token) {
   ///     print('Token: $token');
   ///   },
@@ -118,7 +118,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// CloudFlareTurnstile(
-  ///   siteKey: '0x000000000000000000000',
+  ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenExpired: () {
   ///     print('Token Expired');
   ///   },
@@ -137,7 +137,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// CloudFlareTurnstile(
-  ///   siteKey: '0x000000000000000000000',
+  ///   siteKey: '3x00000000000000000000FF',
   ///   errorBuilder: (context, error) {
   ///     return Text(error.message);
   ///   },
