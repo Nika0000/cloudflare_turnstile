@@ -253,7 +253,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
-      ..clearCache()
       ..setOnConsoleMessage((mes) {
         if (mes.level == JavaScriptLogLevel.warning) {
           if (mes.message.contains(RegExp('Turnstile'))) {
@@ -267,10 +266,10 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
           onPageFinished: (c) async {
             var attemps = 0;
 
-            Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+            Timer.periodic(const Duration(microseconds: 2500), (timer) async {
               attemps++;
 
-              if (_isWidgetReady) return timer.cancel();
+              if (_isWidgetReady || !mounted) return timer.cancel();
 
               await _getWidgetDimension();
 
@@ -307,7 +306,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
           },
           onPageStarted: (_) => _resetWidget(),
           onWebResourceError: (error) {
-            if (error.errorType == WebResourceErrorType.hostLookup) {
+            if (error.errorType == WebResourceErrorType.hostLookup && mounted) {
               setState(() {
                 _hasError = const TurnstileException(
                   'Server or proxy hostname lookup failed.',
@@ -415,6 +414,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       ..addJavaScriptChannel(
         'TurnstileToken',
         onMessageReceived: (message) {
+          if (!mounted) return;
           widget.controller?.token = message.message;
           widget.onTokenRecived?.call(message.message);
         },
@@ -430,6 +430,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       ..addJavaScriptChannel(
         'TurnstileWidgetId',
         onMessageReceived: (message) {
+          if (!mounted) return;
           widgetId = message.message;
           widget.controller?.widgetId = message.message;
         },
@@ -437,12 +438,14 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       ..addJavaScriptChannel(
         'TokenExpired',
         onMessageReceived: (message) {
+          if (!mounted) return;
           widget.onTokenExpired?.call();
         },
       );
   }
 
   void _resetWidget() {
+    if (!mounted) return;
     setState(() {
       _hasError = null;
       _isWidgetReady = false;
@@ -452,6 +455,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   }
 
   void _addError(TurnstileException error) {
+    if (!mounted) return;
     setState(() {
       _hasError = error;
       _isWidgetReady = error.retryable;
@@ -465,7 +469,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     var dy = _widgetHeight - height;
 
     if (widget.options.size == TurnstileSize.flexible) {
-      if (_widgetWidth <= TurnstileSize.normal.width) {
+      if (_widgetWidth <= TurnstileSize.normal.width && dx > 0) {
         dx = (TurnstileSize.normal.width - _widgetWidth).ceilToDouble();
       }
     }
@@ -482,6 +486,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
   @override
   void dispose() {
+    _controller.clearCache();
     super.dispose();
   }
 

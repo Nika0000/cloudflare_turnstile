@@ -1,3 +1,8 @@
+## 2.0.3
+
+* Fixed app crashes occurring during CAPTCHA in dialog.
+* Fixed `flexible` widget rendering issue on iOS.
+
 ## 2.0.1
 
 * Added handle incorrect configuration errors
