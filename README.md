@@ -1,11 +1,8 @@
 # Flutter Cloudflare Turnstile [![Pub](https://img.shields.io/pub/v/cloudflare_turnstile.svg)](https://pub.dartlang.org/packages/cloudflare_turnstile)
 
+![head](https://github.com/user-attachments/assets/5ffd938a-93b5-490e-b0dc-a3f2a99958be)
 
 Cloudflare turnstile is a free CAPTCHAs Alternative, Turnstile delivers frustration-free, CAPTCHA-free web experiences to website visitors - with just a simple snippet of free code. Moreover, Turnstile stops abuse and confirms visitors are real without the data privacy concerns or awful user experience of CAPTCHAs.
-
-![Preview](https://cf-assets.www.cloudflare.com/slt3lc6tev37/2atsfrGgvgOc3DZ91qMlKN/0412afa63e5fac20964377c70c1a9a17/turnstile_gif.gif)
-
-
 
 ## ⚠️ **NOTE** 
 
