@@ -1,3 +1,8 @@
+## 2.0.4
+
+* Update Readme
+* Update Spelling of variables
+
 ## 2.0.3
 
 * Fixed app crashes occurring during CAPTCHA in dialog.

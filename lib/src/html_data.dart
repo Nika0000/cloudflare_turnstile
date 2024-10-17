@@ -5,7 +5,7 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 String htmlData({
   required String siteKey,
   required TurnstileOptions options,
-  required String onTokenRecived,
+  required String onTokenReceived,
   required String onTurnstileError,
   required String onTokenExpired,
   required String onWidgetCreated,
@@ -13,7 +13,7 @@ String htmlData({
   String? cData,
 }) {
   final exp = RegExp(
-    '<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>',
+    '<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECEIVED|ERROR|TOKEN_EXPIRED|CREATED)>',
   );
 
   final replacedText = _source.replaceAllMapped(exp, (match) {
@@ -38,8 +38,8 @@ String htmlData({
         return options.refreshExpired.name;
       case 'REFRESH_TIMEOUT':
         return options.refreshTimeout.name;
-      case 'TOKEN_RECIVED':
-        return onTokenRecived;
+      case 'TOKEN_RECEIVED':
+        return onTokenReceived;
       case 'ERROR':
         return onTurnstileError;
       case 'TOKEN_EXPIRED':
@@ -86,7 +86,7 @@ String _source = """
                   'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
                   'feedback-enabled': false,
                   callback: function (token) {
-                     <TURNSTILE_TOKEN_RECIVED>
+                     <TURNSTILE_TOKEN_RECEIVED>
                   },
                   'error-callback': function (code) {
                      <TURNSTILE_ERROR>

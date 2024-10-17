@@ -15,8 +15,7 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 
 /// Cloudflare Turnstile web implementation
-class CloudFlareTurnstile extends StatefulWidget
-    implements i.CloudFlareTurnstile {
+class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   ///
   /// /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
@@ -213,8 +212,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDark = brightness == Brightness.dark;
-        widget.options.theme =
-            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
       });
     }
 
@@ -353,7 +351,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         action: widget.action,
         cData: widget.cData,
         options: widget.options,
-        onTokenRecived: _tokenRecivedJSHandler,
+        onTokenReceived: _tokenRecivedJSHandler,
         onTurnstileError: _errorJSHandler,
         onTokenExpired: _tokenExpiredJSHandler,
         onWidgetCreated: _widgetCreatedJSHandler,
@@ -382,13 +380,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       (prev, elem) => prev + newLine * 2 + elem,
     );
 
-    final whatToEmbed = newLine +
-        scriptOpenTag +
-        newLine +
-        jsContent +
-        newLine +
-        scriptCloseTag +
-        newLine;
+    final whatToEmbed =
+        newLine + scriptOpenTag + newLine + jsContent + newLine + scriptCloseTag + newLine;
 
     final indexToSplit = source.indexOf('</head>');
     final splitSource1 = source.substring(0, indexToSplit);
@@ -437,8 +430,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
         widget.errorBuilder?.call(context, _hasError!);
       } else {
         // call only when turnstile dont have buildin method to display error
-        return widget.errorBuilder?.call(context, _hasError!) ??
-            const SizedBox();
+        return widget.errorBuilder?.call(context, _hasError!) ?? const SizedBox();
       }
     }
 
