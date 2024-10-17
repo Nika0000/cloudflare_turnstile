@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           siteKey: '3x00000000000000000000FF', //Change with your site key
           baseUrl: 'http://localhost/',
           mode: TurnstileMode.managed,
-          onTokenRecived: (token) {
+          onTokenReceived: (token) {
             print(token);
           },
         ),
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
-> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Widget Domans list. `baseUrl` is must be a same as list of domains when creating a Widget.
+> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Widget Domains list. `baseUrl` is must be a same as list of domains when creating a Widget.
 
 ## Configure Turnstile Widget
 

@@ -14,8 +14,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 /// Cloudflare Turnstile mobile implementation
-class CloudFlareTurnstile extends StatefulWidget
-    implements i.CloudFlareTurnstile {
+class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
     required this.siteKey,
@@ -201,8 +200,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
   final String _errorJSHandler = 'TurnstileError.postMessage(code);';
   final String _tokenExpiredJSHandler = 'TokenExpired.postMessage();';
-  final String _widgetCreatedJSHandler =
-      'TurnstileWidgetId.postMessage(widgetId);';
+  final String _widgetCreatedJSHandler = 'TurnstileWidgetId.postMessage(widgetId);';
 
   @override
   void initState() {
@@ -214,8 +212,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDark = brightness == Brightness.dark;
-        widget.options.theme =
-            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
       });
     }
 
@@ -224,7 +221,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       action: widget.action,
       cData: widget.cData,
       options: widget.options,
-      onTokenRecived: _tokenRecivedJSHandler,
+      onTokenReceived: _tokenRecivedJSHandler,
       onTurnstileError: _errorJSHandler,
       onTokenExpired: _tokenExpiredJSHandler,
       onWidgetCreated: _widgetCreatedJSHandler,
@@ -355,8 +352,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(false);
-      (controller.platform as AndroidWebViewController)
-          .setOnPlatformPermissionRequest(
+      (controller.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
         (request) => request.deny(),
       );
     }
@@ -499,8 +495,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       if (_hasError!.retryable && widget.mode != i.TurnstileMode.invisible) {
         widget.errorBuilder?.call(context, _hasError!);
       } else {
-        return widget.errorBuilder?.call(context, _hasError!) ??
-            const SizedBox.shrink();
+        return widget.errorBuilder?.call(context, _hasError!) ?? const SizedBox.shrink();
       }
     }
 
