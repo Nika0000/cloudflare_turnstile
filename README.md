@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: CloudflareTurnstile(
+        child: CloudFlareTurnstile(
           siteKey: '3x00000000000000000000FF', //Change with your site key
           baseUrl: 'http://localhost/',
           mode: TurnstileMode.managed,
@@ -57,7 +57,7 @@ final TurnstileOptions options = const TurnstileOptions(
 
 //...
 
-CloudflareTurnstile(
+CloudFlareTurnstile(
   sitekey: '3x00000000000000000000FF',
   options: options,
   mode: TurnstileMode.managed,
