@@ -3,14 +3,14 @@
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 /// Turnstile controller mobile implementation.
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<WebViewController> {
+    implements i.TurnstileController<InAppWebViewController> {
   /// The connector associated with the controller.
   @override
-  late WebViewController connector;
+  late InAppWebViewController connector;
 
   String? _token;
 
@@ -46,7 +46,7 @@ class TurnstileController extends ChangeNotifier
 
   /// Sets a new connector.
   @override
-  void setConnector(WebViewController newConnector) {
+  void setConnector(InAppWebViewController newConnector) {
     connector = newConnector;
   }
 
@@ -59,7 +59,7 @@ class TurnstileController extends ChangeNotifier
       _token = newToken;
 
       if (newToken != null && newToken.isNotEmpty) {
-        _onTokenRecived?.call(newToken);
+        _onTokenReceived?.call(newToken);
       }
 
       notifyListeners();
@@ -120,7 +120,8 @@ class TurnstileController extends ChangeNotifier
       await connector.reload();
       return;
     }
-    await connector.runJavaScript('''turnstile.reset(`$_widgetId`);''');
+    await connector
+        .evaluateJavascript(source: '''turnstile.reset(`$_widgetId`);''');
   }
 
   /// The function that check if a widget has expired.
@@ -142,8 +143,8 @@ class TurnstileController extends ChangeNotifier
       return true;
     }
 
-    final result = await connector.runJavaScriptReturningResult(
-      '''turnstile.isExpired(`$_widgetId`);''',
+    final result = await connector.evaluateJavascript(
+      source: '''turnstile.isExpired(`$_widgetId`);''',
     );
 
     // ignore: avoid_bool_literals_in_conditional_expressions
@@ -153,11 +154,12 @@ class TurnstileController extends ChangeNotifier
   /// dispose resources
   @override
   void dispose() {
+    connector.dispose();
     super.dispose();
   }
 
   Function(TurnstileException error)? _onError;
-  Function(String token)? _onTokenRecived;
+  Function(String token)? _onTokenReceived;
 
   /// Registers a callback to be invoked when an error occurs.
   ///
@@ -190,12 +192,12 @@ class TurnstileController extends ChangeNotifier
   /// ```dart
   /// TurnstileController controller = TurnstileController();
   ///
-  /// controller.onTokenRecived((token) {
+  /// controller.onTokenReceived((token) {
   ///   print('New token: $token');
   /// });
   /// ```
   @override
-  void onTokenRecived(Function(String token) callback) {
-    _onTokenRecived = callback;
+  void onTokenReceived(Function(String token) callback) {
+    _onTokenReceived = callback;
   }
 }

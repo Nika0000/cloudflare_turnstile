@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_unused_constructor_parameters
+
 import 'package:cloudflare_turnstile/src/controller/interface.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
@@ -8,49 +10,53 @@ class CloudFlareTurnstile extends StatelessWidget
     implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   ///
-  /// /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
-  /// [mode] defines the Turnstile widget behavior (e.g., managed, non-interactive, or invisible).
+  /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
   /// Additional parameters like [action], [cData], [controller], and various options
   /// customize the widget's behavior.
   CloudFlareTurnstile({
     required this.siteKey,
-    required this.mode,
     super.key,
     this.action,
     this.cData,
     this.baseUrl = 'http://localhost/',
     TurnstileOptions? options,
     this.controller,
-    this.onTokenRecived,
+    this.onTokenReceived,
     this.onTokenExpired,
-    this.errorBuilder,
+    this.onError,
   }) : options = options ?? TurnstileOptions();
+
+  /// Create a Cloudflare Turnstile invisible widget.
+  ///
+  /// [siteKey] - A Cloudflare Turnstile sitekey.
+  /// It`s likely generated or obtained from the Cloudflare dashboard.
+  ///
+  /// [action] - A customer value that can be used to differentiate widgets under
+  /// the some sitekey in analytics and witch is returned upon validation.
+  ///
+  /// [cData] - A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// [baseUrl] - A website url corresponding current turnstile widget.
+  ///
+  /// [options] - Configuration options for the Turnstile widget.
+  factory CloudFlareTurnstile.invisible({
+    required String siteKey,
+    String? action,
+    String? cData,
+    String baseUrl = 'http://localhost',
+    TurnstileOptions? options,
+  }) {
+    throw UnimplementedError(
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+  }
 
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
-  /// It`s likely generated or obtained from the CloudFlare dashboard.
+  /// It`s likely generated or obtained from the Cloudflare dashboard.
   @override
   final String siteKey;
-
-  /// The Turnstile widget mode.
-  ///
-  /// The three available modes are:
-  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
-  /// to decide if an interactive challange should be used. if we show an interaction,
-  /// the user will be prmpted to check a box
-  ///
-  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
-  /// while the browser challanges run. Users will never be required or prompted
-  /// to interact with the widget
-  ///
-  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
-  /// an invisible browser challange is in progress. invisible challanges should take
-  /// a few seconds to complete.
-  ///
-  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
-  @override
-  final i.TurnstileMode mode;
 
   /// A customer value that can be used to differentiate widgets under the
   /// same sitekey in analytics and which is returned upon validation.
@@ -89,13 +95,13 @@ class CloudFlareTurnstile extends StatelessWidget
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
-  ///   onTokenRecived: (String token) {
+  ///   onTokenReceived: (String token) {
   ///     print('Token: $token');
   ///   },
   /// ),
   /// ```
   @override
-  final i.OnTokenRecived? onTokenRecived;
+  final i.OnTokenReceived? onTokenReceived;
 
   /// A Callback invoke when the token expires and does not
   /// reset the widget.
@@ -119,19 +125,117 @@ class CloudFlareTurnstile extends StatelessWidget
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
-  ///   errorBuilder: (context, error) {
-  ///     return Text(error.message);
+  ///   onError: (error) {
+  ///     print(error.message);
   ///   },
   /// ),
   /// ```
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
-  final i.ErrorBuilder? errorBuilder;
+  final i.OnError? onError;
+
+  /// Retrives the current token from the widget.
+  ///
+  /// Returns `null` if no token is available.
+  @override
+  String? get token => throw UnimplementedError(
+      'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+
+  /// Retrives the current widget id.
+  ///
+  /// This `id` is used to uniquely identify the Turnstile widget instance.
+  @override
+  String? get id => throw UnimplementedError(
+      'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+
+  /// The function can be called when widget mey become expired and
+  /// needs to be refreshed otherwise, it will start a new challenge.
+  ///
+  /// This method can only be called when [id] is not null.
+  ///
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// await turnstile.isExpired();
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<void> refresh() {
+    throw UnimplementedError(
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+  }
+
+  /// This function starts a Cloudflare Turnstile challenge and returns token
+  /// or `null` if challenge failed or error occured.
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// final token = await turnstile.getToken();
+  ///
+  /// print(token);
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<String?> getToken() {
+    throw UnimplementedError(
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+  }
+
+  /// The function that check if a widget has expired.
+  ///
+  /// This method can only be called when [id] is not null.
+  ///
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// // ...
+  ///
+  /// bool isTokenExpired = await turnstile.isExpired();
+  /// print(isTokenExpired);
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<bool> isExpired() {
+    throw UnimplementedError(
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+  }
+
+  /// Dispose invisible Turnstile widget.
+  ///
+  ///
+  /// This should be called when the widget is no longer needed to free
+  /// up resources and clean up.
+  @override
+  Future<void> dispose() {
+    throw UnimplementedError(
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+  }
 
   @override
   Widget build(BuildContext context) {
     throw UnimplementedError(
-        'Cannot call build on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
   }
 }

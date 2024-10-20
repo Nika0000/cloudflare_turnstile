@@ -1,17 +1,8 @@
-import 'package:cloudflare_turnstile/src/widget/interface.dart';
+import 'package:flutter/material.dart';
 
 /// Configuration options for the Cloudflare Turnstile widget.
 class TurnstileOptions {
   /// Create a Cloudflare Turnstile Options configuration.
-  ///
-  /// The default values are:
-  /// - [size] = [TurnstileSize.normal]
-  /// - [theme] = [TurnstileTheme.auto]
-  /// - [language] = 'auto'
-  /// - [retryInterval] = 8000 milliseconds (8 seconds)
-  /// - [retryAutomatically] = true (automatic retry)
-  /// - [refreshExpired] = [TurnstileRefreshExpired.auto]
-  /// - [refreshTimeout] = [TurnstileRefreshTimeout.auto]
   TurnstileOptions({
     this.size = TurnstileSize.normal,
     this.theme = TurnstileTheme.auto,
@@ -20,6 +11,9 @@ class TurnstileOptions {
     this.retryAutomatically = true,
     this.refreshExpired = TurnstileRefreshExpired.auto,
     this.refreshTimeout = TurnstileRefreshTimeout.auto,
+    this.borderRadius = const BorderRadius.all(Radius.circular(4)),
+    this.animationDuration = const Duration(milliseconds: 500),
+    this.curves = Curves.linearToEaseOut,
   });
 
   /// The widget size.
@@ -72,8 +66,26 @@ class TurnstileOptions {
   /// (manual refresh by the visitor), or [TurnstileRefreshTimeout.never] (show a timeout without refreshing).
   /// The default is [TurnstileRefreshTimeout.auto].
   ///
-  /// This setting applies only to widgets in [TurnstileMode.managed].
+  /// This setting applies only to widgets in managed.
   final TurnstileRefreshTimeout refreshTimeout;
+
+  /// The border radius applied to the widget
+  ///
+  /// This allows customization of the widget`s appearance by rounding the corners.
+  /// The default is a circular radius of 4 pixels.
+  final BorderRadiusGeometry? borderRadius;
+
+  /// The duration of animations when displaying the widget.
+  ///
+  /// This defines how long animations take to complete.
+  /// The default value is 500 milliseconds.
+  final Duration? animationDuration;
+
+  /// The curve applied to animations when displaying the widget.
+  ///
+  /// This allows for different animation styles during the display
+  /// The default is [Curves.linearToEaseOut].
+  final Curve? curves;
 }
 
 /// Defines the sizes for the Cloudflare Turnstile widget.

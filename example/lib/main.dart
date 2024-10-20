@@ -49,20 +49,27 @@ class _MyAppState extends State<MyApp> {
                         : const CircularProgressIndicator(),
                   ),
                   const SizedBox(height: 48.0),
-                  CloudFlareTurnstile(
-                    siteKey: '3x00000000000000000000FF',
-                    mode: TurnstileMode.managed,
-                    options: _options,
-                    controller: _controller,
-                    onTokenRecived: (token) {
-                      setState(() {
-                        _token = token;
-                      });
-                    },
-                    onTokenExpired: () {},
-                    errorBuilder: (context, error) {
-                      return Text(error.message);
-                    },
+                  Align(
+                    alignment: Alignment.center,
+                    child: CloudFlareTurnstile(
+                      siteKey: '3x00000000000000000000FF',
+                      options: _options,
+                      controller: _controller,
+                      onTokenReceived: (token) {
+                        setState(() {
+                          _token = token;
+                        });
+                      },
+                      onTokenExpired: () {},
+                      onError: (error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Turnstile challenge failed:\n${error.message}'),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(height: 48.0),
                   Row(

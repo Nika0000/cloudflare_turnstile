@@ -145,12 +145,12 @@ class TurnstileController extends ChangeNotifier
   /// ```dart
   /// TurnstileController controller = TurnstileController();
   ///
-  /// controller.onTokenRecived((token) {
+  /// controller.onTokenReceived((token) {
   ///   print('New token: $token');
   /// });
   /// ```
   @override
-  void onTokenRecived(Function(String token) callback) {
+  void onTokenReceived(Function(String token) callback) {
     throw UnimplementedError('Cannot call this function on the facade.');
   }
 }

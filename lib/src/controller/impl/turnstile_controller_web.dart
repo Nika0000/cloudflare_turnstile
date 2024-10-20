@@ -58,7 +58,7 @@ class TurnstileController extends ChangeNotifier
     _token = token;
 
     if (token != null && token.isNotEmpty) {
-      _onTokenRecived?.call(token);
+      _onTokenReceived?.call(token);
     }
 
     notifyListeners();
@@ -153,7 +153,7 @@ class TurnstileController extends ChangeNotifier
   }
 
   Function(TurnstileException error)? _onError;
-  Function(String token)? _onTokenRecived;
+  Function(String token)? _onTokenReceived;
 
   /// Registers a callback to be invoked when an error occurs.
   ///
@@ -186,12 +186,12 @@ class TurnstileController extends ChangeNotifier
   /// ```dart
   /// TurnstileController controller = TurnstileController();
   ///
-  /// controller.onTokenRecived((token) {
+  /// controller.onTokenReceived((token) {
   ///   print('New token: $token');
   /// });
   /// ```
   @override
-  void onTokenRecived(Function(String token) callback) {
-    _onTokenRecived = callback;
+  void onTokenReceived(Function(String token) callback) {
+    _onTokenReceived = callback;
   }
 }

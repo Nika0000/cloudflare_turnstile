@@ -5,7 +5,7 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 String htmlData({
   required String siteKey,
   required TurnstileOptions options,
-  required String onTokenRecived,
+  required String onTokenReceived,
   required String onTurnstileError,
   required String onTokenExpired,
   required String onWidgetCreated,
@@ -39,7 +39,7 @@ String htmlData({
       case 'REFRESH_TIMEOUT':
         return options.refreshTimeout.name;
       case 'TOKEN_RECIVED':
-        return onTokenRecived;
+        return onTokenReceived;
       case 'ERROR':
         return onTurnstileError;
       case 'TOKEN_EXPIRED':
@@ -99,18 +99,6 @@ String _source = """
                <TURNSTILE_CREATED>
            }
         });
-
-       function getWidgetDimensions() {
-           const widgetElement = document.getElementById('cf-turnstile');
-           const rect = widgetElement.getBoundingClientRect();
-
-           const dimensions = {
-               width: rect.width,
-               height: rect.height
-           };
-
-           return JSON.stringify(dimensions);
-       };
 
    </script>
    <style>

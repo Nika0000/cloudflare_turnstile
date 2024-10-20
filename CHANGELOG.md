@@ -1,3 +1,12 @@
+## 3.0.0-legacy
+
+* Added background support for the widget without inserting it into the widget tree.
+* Introduced customizable widget border radius.
+* Implemented display animations for a smoother user experience.
+* Fixed compatibility issues with unsupported platforms.
+* Updated README to reflect correct naming conventions for the widget.
+
+
 ## 2.0.3
 
 * Fixed app crashes occurring during CAPTCHA in dialog.

@@ -106,9 +106,9 @@ abstract class TurnstileController<T> {
   /// ```dart
   /// TurnstileController controller = TurnstileController();
   ///
-  /// controller.onTokenRecived((token) {
+  /// controller.onTokenReceived((token) {
   ///   print('New token: $token');
   /// });
   /// ```
-  void onTokenRecived(Function(String token) callback);
+  void onTokenReceived(Function(String token) callback);
 }

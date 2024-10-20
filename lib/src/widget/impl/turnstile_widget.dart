@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer' as dev;
 import 'dart:io';
 
@@ -9,9 +8,16 @@ import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+
+const String _tokenReceivedJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileToken`, token);';
+const String _errorJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileError`, code);';
+const String _tokenExpiredJSHandler =
+    'window.flutter_inappwebview.callHandler(`TokenExpired`);';
+const String _widgetCreatedJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
 
 /// Cloudflare Turnstile mobile implementation
 class CloudFlareTurnstile extends StatefulWidget
@@ -19,16 +25,15 @@ class CloudFlareTurnstile extends StatefulWidget
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
     required this.siteKey,
-    required this.mode,
     super.key,
     this.action,
     this.cData,
     this.baseUrl = 'http://localhost/',
     TurnstileOptions? options,
     this.controller,
-    this.onTokenRecived,
+    this.onTokenReceived,
     this.onTokenExpired,
-    this.errorBuilder,
+    this.onError,
   }) : options = options ?? TurnstileOptions() {
     if (action != null) {
       assert(
@@ -50,23 +55,20 @@ class CloudFlareTurnstile extends StatefulWidget
       'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
     );
 
-    assert(
-      !(mode == i.TurnstileMode.invisible &&
-          this.options.refreshExpired == TurnstileRefreshExpired.manual),
+    /*   assert(
+      !(mode == i.TurnstileMode.invisible && this.options.refreshExpired == TurnstileRefreshExpired.manual),
       '${this.options.refreshExpired} is impossible in $mode, consider using TurnstileRefreshExpired.auto or TurnstileRefreshExpired.never',
     );
 
     assert(
-      !(mode == i.TurnstileMode.invisible &&
-          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      !(mode == i.TurnstileMode.invisible && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
       '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    );
-
+    ); */
+/* 
     assert(
-      !(mode == i.TurnstileMode.nonInteractive &&
-          this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
+      !(mode == i.TurnstileMode.nonInteractive && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
       '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    );
+    ); */
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -75,25 +77,6 @@ class CloudFlareTurnstile extends StatefulWidget
   /// It`s likely generated or obtained from the CloudFlare dashboard.
   @override
   final String siteKey;
-
-  /// The Turnstile widget mode.
-  ///
-  /// The three available modes are:
-  /// [TurnstileMode.managed] - Cloudflare will use information from the visitor
-  /// to decide if an interactive challange should be used. if we show an interaction,
-  /// the user will be prmpted to check a box
-  ///
-  /// [TurnstileMode.nonInteractive] - Users will see a widget with a loading bar
-  /// while the browser challanges run. Users will never be required or prompted
-  /// to interact with the widget
-  ///
-  /// [TurnstileMode.invisible] - Users will not see a widget or any indication that
-  /// an invisible browser challange is in progress. invisible challanges should take
-  /// a few seconds to complete.
-  ///
-  /// Refer to [Widget types](https://developers.cloudflare.com/turnstile/concepts/widget-types/)
-  @override
-  final i.TurnstileMode mode;
 
   /// A customer value that can be used to differentiate widgets under the
   /// same sitekey in analytics and which is returned upon validation.
@@ -132,13 +115,13 @@ class CloudFlareTurnstile extends StatefulWidget
   /// ```dart
   /// CloudFlareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
-  ///   onTokenRecived: (String token) {
+  ///   onTokenReceived: (String token) {
   ///     print('Token: $token');
   ///   },
   /// ),
   /// ```
   @override
-  final i.OnTokenRecived? onTokenRecived;
+  final i.OnTokenReceived? onTokenReceived;
 
   /// A Callback invoke when the token expires and does not
   /// reset the widget.
@@ -175,269 +158,236 @@ class CloudFlareTurnstile extends StatefulWidget
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
-  final i.ErrorBuilder? errorBuilder;
+  final i.OnError? onError;
 
   @override
   State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
+
+  /// Create a Cloudflare Turnstile invisible widget.
+  ///
+  /// [siteKey] - A Cloudflare Turnstile sitekey.
+  /// It`s likely generated or obtained from the Cloudflare dashboard.
+  ///
+  /// [action] - A customer value that can be used to differentiate widgets under
+  /// the some sitekey in analytics and witch is returned upon validation.
+  ///
+  /// [cData] - A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// [baseUrl] - A website url corresponding current turnstile widget.
+  ///
+  /// [options] - Configuration options for the Turnstile widget.
+  factory CloudFlareTurnstile.invisible({
+    required String siteKey,
+    String? action,
+    String? cData,
+    String baseUrl = 'http://localhost',
+    TurnstileOptions? options,
+  }) {
+    return _TurnstileInvisible.init(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      baseUrl: baseUrl,
+      options: options ?? TurnstileOptions(),
+    );
+  }
+
+  /// Retrives the current token from the widget.
+  ///
+  /// Returns `null` if no token is available.
+  @override
+  String? get token => throw UnimplementedError(
+        'This function cannot be called in interactive widget mode.',
+      );
+
+  /// Retrives the current widget id.
+  ///
+  /// This `id` is used to uniquely identify the Turnstile widget instance.
+  @override
+  String? get id => throw UnimplementedError(
+        'This function cannot be called in interactive widget mode.',
+      );
+
+  /// The function can be called when widget mey become expired and
+  /// needs to be refreshed otherwise, it will start a new challenge.
+  ///
+  /// This method can only be called when [id] is not null.
+  ///
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// await turnstile.isExpired();
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<void> refresh() {
+    throw UnimplementedError(
+      'This function cannot be called in interactive widget mode.',
+    );
+  }
+
+  /// This function starts a Cloudflare Turnstile challenge and returns token
+  /// or `null` if challenge failed or error occured.
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// final token = await turnstile.getToken();
+  ///
+  /// print(token);
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<String?> getToken() {
+    throw UnimplementedError(
+      'This function cannot be called in interactive widget mode.',
+    );
+  }
+
+  /// The function that check if a widget has expired.
+  ///
+  /// This method can only be called when [id] is not null.
+  ///
+  ///
+  /// example:
+  /// ```dart
+  /// // Initialize turnstile instance
+  /// final turnstile = CloudFlareTurnstile.invisible(
+  ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
+  /// );
+  ///
+  /// // ...
+  ///
+  /// bool isTokenExpired = await turnstile.isExpired();
+  /// print(isTokenExpired);
+  ///
+  /// // finally clean up widget.
+  /// await turnstile.dispose();
+  /// ```
+  @override
+  Future<bool> isExpired() {
+    throw UnimplementedError(
+      'This function cannot be called in interactive widget mode.',
+    );
+  }
+
+  /// Dispose invisible Turnstile widget.
+  ///
+  ///
+  /// This should be called when the widget is no longer needed to free
+  /// up resources and clean up.
+  @override
+  Future<void> dispose() {
+    throw UnimplementedError(
+      'This function cannot be called in interactive widget mode.',
+    );
+  }
 }
 
 class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
-  late final WebViewController _controller;
+  final GlobalKey webViewKey = GlobalKey();
+
+  final InAppWebViewSettings _settings = InAppWebViewSettings(
+    disableHorizontalScroll: true,
+    verticalScrollBarEnabled: false,
+    transparentBackground: true,
+    disallowOverScroll: true,
+    disableVerticalScroll: true,
+    supportZoom: false,
+    useWideViewPort: false,
+    disableDefaultErrorPage: true,
+  );
 
   late String data;
 
   String? widgetId;
 
   bool _isWidgetReady = false;
+  bool _isTurnstileLoaded = false;
   TurnstileException? _hasError;
-
-  late bool _isWidgetInteractive;
-
-  late double _widgetWidth = widget.options.size == TurnstileSize.flexible
-      ? TurnstileSize.normal.width
-      : widget.options.size.width;
-  late double _widgetHeight = widget.options.size.height;
-
-  final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
-  final String _errorJSHandler = 'TurnstileError.postMessage(code);';
-  final String _tokenExpiredJSHandler = 'TokenExpired.postMessage();';
-  final String _widgetCreatedJSHandler =
-      'TurnstileWidgetId.postMessage(widgetId);';
 
   @override
   void initState() {
     super.initState();
 
-    _isWidgetInteractive = widget.mode != i.TurnstileMode.invisible;
-
-    if (widget.options.theme == TurnstileTheme.auto) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final brightness = MediaQuery.of(context).platformBrightness;
-        final isDark = brightness == Brightness.dark;
-        widget.options.theme =
-            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
-      });
+    // Check if the platform is supported
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      throw UnsupportedError(
+        'CloudFlareTurnstile only supports Android, iOS and Web platforms.',
+      );
     }
+
+    PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setTurnstileTheme();
+    });
 
     data = htmlData(
       siteKey: widget.siteKey,
       action: widget.action,
       cData: widget.cData,
       options: widget.options,
-      onTokenRecived: _tokenRecivedJSHandler,
+      onTokenReceived: _tokenReceivedJSHandler,
       onTurnstileError: _errorJSHandler,
       onTokenExpired: _tokenExpiredJSHandler,
       onWidgetCreated: _widgetCreatedJSHandler,
     );
+  }
 
-    late final PlatformWebViewControllerCreationParams params;
-
-    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
-      params = WebKitWebViewControllerCreationParams(
-        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
-      );
-    } else {
-      params = AndroidWebViewControllerCreationParams();
+  void _setTurnstileTheme() {
+    if (widget.options.theme == TurnstileTheme.auto) {
+      final brightness = MediaQuery.of(context).platformBrightness;
+      final isDark = brightness == Brightness.dark;
+      widget.options.theme =
+          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
     }
+  }
 
-    final controller = WebViewController.fromPlatformCreationParams(params);
-
-    // Enable HybridComposition
-    if (Platform.isAndroid) {
-      AndroidWebViewWidgetCreationParams(
-        displayWithHybridComposition: true,
-        controller: controller.platform,
-      );
-    }
-
+  void _createChannels(InAppWebViewController controller) {
     controller
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setOnConsoleMessage((mes) {
-        if (mes.level == JavaScriptLogLevel.warning) {
-          if (mes.message.contains(RegExp('Turnstile'))) {
-            final description = mes.message.split('] ')[1];
-            dev.log(description, level: 800, name: 'cloudflare_turnstile');
-          }
-        }
-      })
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (c) async {
-            var attemps = 0;
-
-            Timer.periodic(const Duration(microseconds: 2500), (timer) async {
-              attemps++;
-
-              if (_isWidgetReady || !mounted) return timer.cancel();
-
-              await _getWidgetDimension();
-
-              if (attemps >= 3) {
-                timer.cancel();
-
-                if (!_isWidgetReady) {
-                  dev.log(
-                    'Widget mode mismatch: The current widget mode is ${widget.mode.name}, which may not match the mode set in the Cloudflare Turnstile dashboard. Please verify the widget mode in the Cloudflare dashboard settings.',
-                    name: 'cloudflare_turnstile',
-                    level: 800,
-                  );
-                }
-
-                setState(() => _isWidgetReady = true);
-                widget.controller?.isWidgetReady = _isWidgetReady;
-              }
-            });
-
-            // TODO: The current method for handling flexible sizes by injecting
-            // custom styles is not ideal and needs improvement.
-            if (widget.options.size == TurnstileSize.flexible) {
-              await _controller.runJavaScript("""
-                const style = document.createElement('style');
-                style.innerHTML = `
-                  #cf-turnstile {
-                      width: calc(100% - 3px);
-                      margin: auto;
-                  }
-                `;
-                document.head.appendChild(style);
-              """);
-            }
-          },
-          onPageStarted: (_) => _resetWidget(),
-          onWebResourceError: (error) {
-            if (error.errorType == WebResourceErrorType.hostLookup && mounted) {
-              setState(() {
-                _hasError = const TurnstileException(
-                  'Server or proxy hostname lookup failed.',
-                );
-
-                widget.controller?.error = _hasError;
-
-                _isWidgetReady = false;
-                widget.controller?.isWidgetReady = _isWidgetReady;
-              });
-            }
-          },
-          onNavigationRequest: (request) {
-            if (Platform.isIOS) {
-              final uri = Uri.tryParse(request.url);
-              final baseUri = Uri.tryParse(widget.baseUrl);
-
-              if (uri?.host == 'challenges.cloudflare.com' ||
-                  uri?.host == baseUri?.host ||
-                  request.url == 'about:srcdoc' ||
-                  request.url == 'about:blank') {
-                return NavigationDecision.navigate;
-              } else {
-                return NavigationDecision.prevent;
-              }
-            } else {
-              return NavigationDecision.prevent;
-            }
-          },
-          onHttpAuthRequest: (_) => NavigationDecision.prevent,
-          onHttpError: (error) {
-            if (error.response != null && error.response!.statusCode >= 500) {
-              setState(() {
-                _hasError = TurnstileException(
-                  'Server returned HTTP status ${error.response!.statusCode}',
-                );
-                _isWidgetReady = false;
-                widget.controller?.error = _hasError;
-                widget.controller?.isWidgetReady = _isWidgetReady;
-              });
-            }
-          },
-        ),
-      )
-      ..enableZoom(false);
-
-    if (controller.platform is AndroidWebViewController) {
-      AndroidWebViewController.enableDebugging(false);
-      (controller.platform as AndroidWebViewController)
-          .setOnPlatformPermissionRequest(
-        (request) => request.deny(),
-      );
-    }
-
-    _controller = controller;
-
-    widget.controller?.setConnector(controller);
-
-    _createChannels();
-
-    _controller.loadHtmlString(
-      data,
-      baseUrl: widget.baseUrl,
-    );
-  }
-
-  FutureOr<void> _getWidgetDimension() async {
-    if (_isWidgetReady) {
-      return;
-    }
-
-    final jsonFormatRegex = RegExp(r'^"|"$|\\');
-
-    final result = await _controller.runJavaScriptReturningResult(
-      '''getWidgetDimensions()''',
-    );
-
-    final jsonData = result.toString();
-
-    final jsonWithoutOuterQuotes = jsonData.replaceAll(
-      jsonFormatRegex,
-      '',
-    );
-
-    final size = jsonDecode(jsonWithoutOuterQuotes) as Map<String, dynamic>?;
-    if (size == null) return;
-
-    final height = double.parse(size['height'].toString());
-    final width = double.parse(size['width'].toString());
-
-    if (widget.mode != i.TurnstileMode.invisible) {
-      if (height <= 0) return;
-      _widgetHeight = height;
-      _widgetWidth = width;
-    } else {
-      if (height > 0) return;
-    }
-
-    setState(() => _isWidgetReady = true);
-    widget.controller?.isWidgetReady = _isWidgetReady;
-  }
-
-  void _createChannels() {
-    _controller
-      ..addJavaScriptChannel(
-        'TurnstileToken',
-        onMessageReceived: (message) {
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileToken',
+        callback: (args) {
           if (!mounted) return;
-          widget.controller?.token = message.message;
-          widget.onTokenRecived?.call(message.message);
+          final token = args[0] as String;
+          widget.controller?.token = token;
+          widget.onTokenReceived?.call(token);
         },
       )
-      ..addJavaScriptChannel(
-        'TurnstileError',
-        onMessageReceived: (message) {
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileError',
+        callback: (args) {
           if (_hasError != null) return;
-          final errorCode = int.tryParse(message.message) ?? -1;
-          _addError(TurnstileException.fromCode(errorCode));
+          final errorCode = int.tryParse(args[0] as String);
+          _addError(TurnstileException.fromCode(errorCode ?? -1));
         },
       )
-      ..addJavaScriptChannel(
-        'TurnstileWidgetId',
-        onMessageReceived: (message) {
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileWidgetId',
+        callback: (args) {
           if (!mounted) return;
-          widgetId = message.message;
-          widget.controller?.widgetId = message.message;
+          widgetId = args[0] as String;
+          widget.controller?.widgetId = widgetId!;
         },
       )
-      ..addJavaScriptChannel(
-        'TokenExpired',
-        onMessageReceived: (message) {
+      ..addJavaScriptHandler(
+        handlerName: 'TokenExpired',
+        callback: (message) {
           if (!mounted) return;
           widget.onTokenExpired?.call();
         },
@@ -445,92 +395,274 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   }
 
   void _resetWidget() {
+    _hasError = null;
+    _isWidgetReady = false;
+    widget.controller?.error = null;
+    widget.controller?.isWidgetReady = false;
     if (!mounted) return;
-    setState(() {
-      _hasError = null;
-      _isWidgetReady = false;
-      widget.controller?.error = null;
-      widget.controller?.isWidgetReady = false;
-    });
+    setState(() {});
   }
 
   void _addError(TurnstileException error) {
+    _hasError = error;
+    widget.controller?.error = error;
+    widget.onError?.call(_hasError!);
     if (!mounted) return;
-    setState(() {
-      _hasError = error;
-      _isWidgetReady = error.retryable;
-      widget.controller?.error = error;
-      widget.controller?.isWidgetReady = error.retryable;
-    });
+    setState(() {});
   }
 
-  Offset _getCorrectSize(double width, double height) {
-    var dx = _widgetWidth - width;
-    var dy = _widgetHeight - height;
+  void _ready(bool ready) {
+    _isWidgetReady = ready;
+    widget.controller?.isWidgetReady = ready;
+    if (!mounted) return;
+    setState(() {});
+  }
 
-    if (widget.options.size == TurnstileSize.flexible) {
-      if (_widgetWidth <= TurnstileSize.normal.width && dx > 0) {
-        dx = (TurnstileSize.normal.width - _widgetWidth).ceilToDouble();
+  late final _view = InAppWebView(
+    keepAlive: InAppWebViewKeepAlive(),
+    key: webViewKey,
+    initialData: InAppWebViewInitialData(
+      data: data,
+      baseUrl: WebUri(widget.baseUrl),
+    ),
+    initialSettings: _settings,
+    onWebViewCreated: (controller) {
+      _createChannels(controller);
+      widget.controller?.setConnector(controller);
+    },
+    onLoadStart: (controller, _) {
+      print('starting load resource');
+      _isTurnstileLoaded = false;
+      _resetWidget();
+    },
+    onLoadResource: (controller, resource) {
+      if (_isTurnstileLoaded && _hasError != null) {
+        controller.reload();
       }
-    }
+    },
+    onLoadStop: (controller, uri) async {
+      if (!_isWidgetReady && !mounted) {
+        final contentWidth = await controller.getContentWidth();
+        if (contentWidth != null && contentWidth <= 0) {
+          dev.log(
+            'Widget mode mismatch: The current widget is Invisible, which may'
+            ' not match the mode set in the Cloudflare Turnstile dashboard.'
+            'Please verify the widget mode in the Cloudflare dashboard settings.',
+            name: 'cloudflare_turnstile',
+            level: 800,
+          );
+        }
+      }
 
-    if (dx < 0) dx = 0;
-    if (dy < 0) dy = 0;
-
-    return Offset(dx, dy);
-  }
-
-  late final Widget _view = WebViewWidget(
-    controller: _controller,
+      _isTurnstileLoaded = true;
+      _ready(true);
+    },
+    onConsoleMessage: (controller, consoleMessage) {},
+    onReceivedError: (controller, __, error) {
+      if (error.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
+        return;
+      }
+      _ready(false);
+      _addError(TurnstileException(error.description));
+    },
+    onPermissionRequest: (_, __) async => PermissionResponse(),
   );
 
   @override
   void dispose() {
-    _controller.clearCache();
     super.dispose();
+    //  InAppWebViewController.clearAllCache();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Return the custom error widget if the error is retriable or if the
-    // Turnstile widget does not have a built-in method for displaying errors.
-    // Otherwise, return an empty widget.
-    if (_hasError != null) {
-      if (_hasError!.retryable && widget.mode != i.TurnstileMode.invisible) {
-        widget.errorBuilder?.call(context, _hasError!);
-      } else {
-        return widget.errorBuilder?.call(context, _hasError!) ??
-            const SizedBox.shrink();
-      }
-    }
+    _setTurnstileTheme();
 
-    if (!_isWidgetInteractive) {
-      return SizedBox.shrink(
-        child: _view,
+    final primaryColor = widget.options.theme == TurnstileTheme.light
+        ? const Color(0xFFFAFAFA)
+        : const Color(0xFF232323);
+    final secondaryColor = widget.options.theme == TurnstileTheme.light
+        ? const Color(0xFFDEDEDE)
+        : const Color(0xFF9A9A9A);
+    final adaptiveBorderColor =
+        _isWidgetReady ? secondaryColor : Colors.transparent;
+
+    final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
+
+    final turnstileWidget = Visibility(
+      visible: _hasError == null || isErrorResolvable,
+      maintainState: true,
+      child: AnimatedContainer(
+        duration: widget.options.animationDuration!,
+        width: _isWidgetReady ? widget.options.size.width : 0,
+        height: _isWidgetReady ? widget.options.size.height : 0,
+        curve: widget.options.curves!,
+        decoration: BoxDecoration(
+          color: primaryColor,
+          borderRadius: widget.options.borderRadius,
+        ),
+        foregroundDecoration: BoxDecoration(
+          border: Border.all(color: adaptiveBorderColor),
+          borderRadius: widget.options.borderRadius,
+        ),
+        child: ClipRRect(
+          clipBehavior: Clip.hardEdge,
+          borderRadius: widget.options.borderRadius!.add(
+            // add extra 1 px because border
+            const BorderRadius.all(
+              Radius.circular(1),
+            ),
+          ),
+          child: _view,
+        ),
+      ),
+    );
+
+    return Wrap(
+      children: [turnstileWidget],
+    );
+  }
+}
+
+// ignore: must_be_immutable
+class _TurnstileInvisible extends CloudFlareTurnstile {
+  _TurnstileInvisible.init({
+    required String siteKey,
+    required String baseUrl,
+    String? action,
+    String? cData,
+    TurnstileOptions? options,
+  }) : super(siteKey: siteKey, controller: TurnstileController()) {
+    // Check if the platform is supported
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      throw UnsupportedError(
+        'CloudFlareTurnstile only supports Android, iOS and Web platforms.',
       );
     }
 
-    return SizedBox(
-      width: widget.options.size.width,
-      height: widget.options.size.height,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final offset = _getCorrectSize(
-            constraints.maxWidth,
-            widget.options.size.height,
-          );
+    PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
 
-          return OverflowBox(
-            alignment: Alignment.topCenter,
-            maxWidth: constraints.maxWidth + offset.dx,
-            maxHeight: widget.options.size.height + offset.dy,
-            child: Opacity(
-              opacity: _isWidgetReady ? 1.0 : 0.0,
-              child: _view,
-            ),
-          );
-        },
-      ),
+    final data = htmlData(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      options: options!,
+      onTokenReceived: _tokenReceivedJSHandler,
+      onTurnstileError: _errorJSHandler,
+      onTokenExpired: _tokenExpiredJSHandler,
+      onWidgetCreated: _widgetCreatedJSHandler,
     );
+
+    _view = HeadlessInAppWebView(
+      initialData: InAppWebViewInitialData(
+        data: data,
+        baseUrl: WebUri(baseUrl),
+      ),
+      onWebViewCreated: (wController) {
+        controller?.setConnector(wController);
+        _createChannels(wController);
+      },
+      onLoadStart: (_, __) {
+        controller?.isWidgetReady = false;
+      },
+      onLoadStop: (_, __) {
+        controller?.isWidgetReady = true;
+      },
+      onConsoleMessage: (_, __) {},
+      onReceivedError: (controller, __, error) {
+        if (error.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
+          return;
+        }
+        _catchError?.call(TurnstileException(error.description));
+      },
+      onPermissionRequest: (_, __) async => PermissionResponse(),
+    );
+  }
+
+  late HeadlessInAppWebView _view;
+  Completer<dynamic>? _completer;
+  Function(TurnstileException error)? _catchError;
+
+  void _createChannels(InAppWebViewController wController) {
+    wController
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileToken',
+        callback: (args) {
+          final token = args[0] as String;
+          controller?.token = token;
+          _completer?.complete(token);
+        },
+      )
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileError',
+        callback: (args) {
+          final errorCode = int.tryParse(args[0] as String);
+          final error = TurnstileException.fromCode(errorCode ?? -1);
+
+          if (_catchError != null) {
+            _catchError?.call(error);
+          } else if (!_completer!.isCompleted) {
+            _completer?.completeError(error);
+          }
+        },
+      )
+      ..addJavaScriptHandler(
+        handlerName: 'TurnstileWidgetId',
+        callback: (args) {
+          controller!.widgetId = args[0] as String;
+        },
+      )
+      ..addJavaScriptHandler(
+        handlerName: 'TokenExpired',
+        callback: (message) {
+          // Handle token expiration logic here
+          _completer?.complete(null);
+        },
+      );
+  }
+
+  @override
+  Future<String?> getToken() async {
+    _completer = Completer<String?>();
+
+    if (!_view.isRunning()) {
+      await _view.run();
+    }
+
+    if (controller!.token != null) {
+      if (!await controller!.isExpired()) {
+        _completer?.complete(token);
+      }
+    }
+
+    return _completer!.future as Future<String?>;
+  }
+
+  @override
+  String? get id => controller?.widgetId;
+
+  @override
+  Future<bool> isExpired() {
+    return controller!.isExpired();
+  }
+
+  @override
+  Future<void> refresh() async {
+    if (!_view.isRunning()) {
+      await getToken();
+    } else if (controller!.isWidgetReady) {
+      // wait util new token received
+      _completer = Completer<String?>();
+      await controller?.refreshToken();
+      return _completer!.future;
+    }
+  }
+
+  @override
+  String? get token => controller?.token;
+
+  @override
+  Future<void> dispose() async {
+    await _view.dispose();
   }
 }
