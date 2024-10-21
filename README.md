@@ -1,4 +1,4 @@
-# Flutter CloudFlare Turnstile [![Pub](https://img.shields.io/pub/v/cloudflare_turnstile.svg)](https://pub.dartlang.org/packages/cloudflare_turnstile)
+# Flutter Cloudflare Turnstile [![Pub](https://img.shields.io/pub/v/cloudflare_turnstile.svg)](https://pub.dartlang.org/packages/cloudflare_turnstile)
 
 ![head](https://github.com/user-attachments/assets/5ffd938a-93b5-490e-b0dc-a3f2a99958be)
 
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
 
     return Scaffold(
       body: Center(
-        child: CloudFlareTurnstile(
+        child: CloudflareTurnstile(
           siteKey: '3x00000000000000000000FF', //Change with your site key
           baseUrl: 'http://localhost/',
           onTokenReceived: (token) {
@@ -62,7 +62,7 @@ class TurnstileService {
   /// Retrives the CloudFlare Turnstile token using invisible mode.
   static Future<String?> get token async {
     // Initialize an instance of invisible Cloudflare Turnstile with your site key
-    final turnstile = CloudFlareTurnstile.invisible(
+    final turnstile = CloudflareTurnstile.invisible(
       siteKey: '1x00000000000000000000BB', // Replace with your actual site key
     );
 
@@ -72,7 +72,7 @@ class TurnstileService {
       return token; // Return the token upon success
     } on TurnstileException catch (e) {
       // Handle Turnstile failure
-      print('Failed to solve CAPTCHA: ${e.message}');
+      print('Challenge failed: ${e.message}');
     } finally {
       // Ensure the Turnstile instance is properly disposed of
       turnstile.dispose();
@@ -84,7 +84,7 @@ class TurnstileService {
 }
 ```
 
-> ⚠️ It's important to call `dispose()` on the `CloudFlareTurnstile` instance when you no longer need it. This ensures that resources are properly cleaned up, preventing any potential memory issues.
+> ⚠️ It's important to call `dispose()` on the `CloudflareTurnstile` instance when you no longer need it. This ensures that resources are properly cleaned up, preventing any potential memory issues.
 
 ## Contribution
 Your contributions are welcome and greatly valued! If you have ideas, suggestions, or improvements, feel free to open an issue or submit a pull request. Every bit of help is appreciated, and your input can make a big difference. Just ensure your contributions fit with the project's goals and guidelines.

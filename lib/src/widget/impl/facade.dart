@@ -6,14 +6,14 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 
 /// Facade class for Cloudflare Turnstile.
-class CloudFlareTurnstile extends StatelessWidget
-    implements i.CloudFlareTurnstile {
+class CloudflareTurnstile extends StatelessWidget
+    implements i.CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   ///
   /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
   /// Additional parameters like [action], [cData], [controller], and various options
   /// customize the widget's behavior.
-  CloudFlareTurnstile({
+  CloudflareTurnstile({
     required this.siteKey,
     super.key,
     this.action,
@@ -40,7 +40,7 @@ class CloudFlareTurnstile extends StatelessWidget
   /// [baseUrl] - A website url corresponding current turnstile widget.
   ///
   /// [options] - Configuration options for the Turnstile widget.
-  factory CloudFlareTurnstile.invisible({
+  factory CloudflareTurnstile.invisible({
     required String siteKey,
     String? action,
     String? cData,
@@ -48,7 +48,7 @@ class CloudFlareTurnstile extends StatelessWidget
     TurnstileOptions? options,
   }) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -93,7 +93,7 @@ class CloudFlareTurnstile extends StatelessWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenReceived: (String token) {
   ///     print('Token: $token');
@@ -108,7 +108,7 @@ class CloudFlareTurnstile extends StatelessWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenExpired: () {
   ///     print('Token Expired');
@@ -123,7 +123,7 @@ class CloudFlareTurnstile extends StatelessWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onError: (error) {
   ///     print(error.message);
@@ -140,14 +140,14 @@ class CloudFlareTurnstile extends StatelessWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-      'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.');
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-      'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.');
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -158,7 +158,7 @@ class CloudFlareTurnstile extends StatelessWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -168,9 +168,9 @@ class CloudFlareTurnstile extends StatelessWidget
   /// await turnstile.dispose();
   /// ```
   @override
-  Future<void> refresh() {
+  Future<void> refresh({bool forceRefresh = true}) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 
   /// This function starts a Cloudflare Turnstile challenge and returns token
@@ -179,7 +179,7 @@ class CloudFlareTurnstile extends StatelessWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -193,7 +193,7 @@ class CloudFlareTurnstile extends StatelessWidget
   @override
   Future<String?> getToken() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 
   /// The function that check if a widget has expired.
@@ -204,7 +204,7 @@ class CloudFlareTurnstile extends StatelessWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -219,7 +219,7 @@ class CloudFlareTurnstile extends StatelessWidget
   @override
   Future<bool> isExpired() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 
   /// Dispose invisible Turnstile widget.
@@ -230,12 +230,12 @@ class CloudFlareTurnstile extends StatelessWidget
   @override
   Future<void> dispose() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 
   @override
   Widget build(BuildContext context) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudFlareTurnstile.');
+        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
   }
 }

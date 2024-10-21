@@ -25,13 +25,13 @@ typedef OnTokenExpired = void Function();
 typedef OnError = Function(TurnstileException error);
 
 /// Abstract class representing a Cloudflare Turnstile widget.
-abstract class CloudFlareTurnstile {
+abstract class CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   ///
   /// The [siteKey] is required and associates this widget with a Cloudflare Turnstile instance.
   /// Additional parameters like [action], [cData], [controller], and various options
   /// customize the widget's behavior.
-  CloudFlareTurnstile({
+  CloudflareTurnstile({
     required this.siteKey,
     this.action,
     this.cData,
@@ -79,7 +79,7 @@ abstract class CloudFlareTurnstile {
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenReceived: (String token) {
   ///     print('Token: $token');
@@ -93,7 +93,7 @@ abstract class CloudFlareTurnstile {
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenExpired: () {
   ///     print('Token Expired');
@@ -112,7 +112,7 @@ abstract class CloudFlareTurnstile {
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onError: (error) {
   ///     print(error.message);
@@ -142,7 +142,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -151,7 +151,7 @@ abstract class CloudFlareTurnstile {
   /// // finally clean up widget.
   /// await turnstile.dispose();
   /// ```
-  Future<void> refresh();
+  Future<void> refresh({bool forceRefresh = true});
 
   /// This function starts a Cloudflare Turnstile challenge and returns token
   /// or `null` if challenge failed or error occured.
@@ -159,7 +159,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -180,7 +180,7 @@ abstract class CloudFlareTurnstile {
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///

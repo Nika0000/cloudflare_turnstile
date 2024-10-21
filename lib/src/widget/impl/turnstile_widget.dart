@@ -20,10 +20,10 @@ const String _widgetCreatedJSHandler =
     'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
 
 /// Cloudflare Turnstile mobile implementation
-class CloudFlareTurnstile extends StatefulWidget
-    implements i.CloudFlareTurnstile {
+class CloudflareTurnstile extends StatefulWidget
+    implements i.CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
-  CloudFlareTurnstile({
+  CloudflareTurnstile({
     required this.siteKey,
     super.key,
     this.action,
@@ -113,7 +113,7 @@ class CloudFlareTurnstile extends StatefulWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenReceived: (String token) {
   ///     print('Token: $token');
@@ -128,7 +128,7 @@ class CloudFlareTurnstile extends StatefulWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   onTokenExpired: () {
   ///     print('Token Expired');
@@ -148,7 +148,7 @@ class CloudFlareTurnstile extends StatefulWidget
   ///
   /// example:
   /// ```dart
-  /// CloudFlareTurnstile(
+  /// CloudflareTurnstile(
   ///   siteKey: '3x00000000000000000000FF',
   ///   errorBuilder: (context, error) {
   ///     return Text(error.message);
@@ -161,7 +161,7 @@ class CloudFlareTurnstile extends StatefulWidget
   final i.OnError? onError;
 
   @override
-  State<CloudFlareTurnstile> createState() => _CloudFlareTurnstileState();
+  State<CloudflareTurnstile> createState() => _CloudflareTurnstileState();
 
   /// Create a Cloudflare Turnstile invisible widget.
   ///
@@ -177,7 +177,7 @@ class CloudFlareTurnstile extends StatefulWidget
   /// [baseUrl] - A website url corresponding current turnstile widget.
   ///
   /// [options] - Configuration options for the Turnstile widget.
-  factory CloudFlareTurnstile.invisible({
+  factory CloudflareTurnstile.invisible({
     required String siteKey,
     String? action,
     String? cData,
@@ -218,7 +218,7 @@ class CloudFlareTurnstile extends StatefulWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -228,7 +228,7 @@ class CloudFlareTurnstile extends StatefulWidget
   /// await turnstile.dispose();
   /// ```
   @override
-  Future<void> refresh() {
+  Future<void> refresh({bool forceRefresh = true}) {
     throw UnimplementedError(
       'This function cannot be called in interactive widget mode.',
     );
@@ -240,7 +240,7 @@ class CloudFlareTurnstile extends StatefulWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -266,7 +266,7 @@ class CloudFlareTurnstile extends StatefulWidget
   /// example:
   /// ```dart
   /// // Initialize turnstile instance
-  /// final turnstile = CloudFlareTurnstile.invisible(
+  /// final turnstile = CloudflareTurnstile.invisible(
   ///   siteKey: '1x00000000000000000000BB', // Replace with your actual site key
   /// );
   ///
@@ -298,7 +298,7 @@ class CloudFlareTurnstile extends StatefulWidget
   }
 }
 
-class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
+class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   final GlobalKey webViewKey = GlobalKey();
 
   final InAppWebViewSettings _settings = InAppWebViewSettings(
@@ -327,7 +327,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
     // Check if the platform is supported
     if (!(Platform.isAndroid || Platform.isIOS)) {
       throw UnsupportedError(
-        'CloudFlareTurnstile only supports Android, iOS and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS and Web platforms.',
       );
     }
 
@@ -431,7 +431,6 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       widget.controller?.setConnector(controller);
     },
     onLoadStart: (controller, _) {
-      print('starting load resource');
       _isTurnstileLoaded = false;
       _resetWidget();
     },
@@ -525,7 +524,7 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 }
 
 // ignore: must_be_immutable
-class _TurnstileInvisible extends CloudFlareTurnstile {
+class _TurnstileInvisible extends CloudflareTurnstile {
   _TurnstileInvisible.init({
     required String siteKey,
     required String baseUrl,
@@ -536,11 +535,12 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
     // Check if the platform is supported
     if (!(Platform.isAndroid || Platform.isIOS)) {
       throw UnsupportedError(
-        'CloudFlareTurnstile only supports Android, iOS and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS and Web platforms.',
       );
     }
 
     PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
+    _completer = Completer<dynamic>();
 
     final data = htmlData(
       siteKey: siteKey,
@@ -564,16 +564,20 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
       },
       onLoadStart: (_, __) {
         controller?.isWidgetReady = false;
+        controller?.error = null;
       },
       onLoadStop: (_, __) {
         controller?.isWidgetReady = true;
       },
       onConsoleMessage: (_, __) {},
-      onReceivedError: (controller, __, error) {
+      onReceivedError: (_, __, error) {
         if (error.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
           return;
         }
-        _catchError?.call(TurnstileException(error.description));
+        controller?.error = TurnstileException(error.description);
+        if (!_completer!.isCompleted) {
+          _completer?.completeError(error);
+        }
       },
       onPermissionRequest: (_, __) async => PermissionResponse(),
     );
@@ -581,7 +585,6 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
 
   late HeadlessInAppWebView _view;
   Completer<dynamic>? _completer;
-  Function(TurnstileException error)? _catchError;
 
   void _createChannels(InAppWebViewController wController) {
     wController
@@ -590,7 +593,9 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
         callback: (args) {
           final token = args[0] as String;
           controller?.token = token;
-          _completer?.complete(token);
+          if (!_completer!.isCompleted) {
+            _completer?.complete(token);
+          }
         },
       )
       ..addJavaScriptHandler(
@@ -599,9 +604,7 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
           final errorCode = int.tryParse(args[0] as String);
           final error = TurnstileException.fromCode(errorCode ?? -1);
 
-          if (_catchError != null) {
-            _catchError?.call(error);
-          } else if (!_completer!.isCompleted) {
+          if (!_completer!.isCompleted) {
             _completer?.completeError(error);
           }
         },
@@ -616,7 +619,9 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
         handlerName: 'TokenExpired',
         callback: (message) {
           // Handle token expiration logic here
-          _completer?.complete(null);
+          if (!_completer!.isCompleted) {
+            _completer?.complete(null);
+          }
         },
       );
   }
@@ -647,12 +652,21 @@ class _TurnstileInvisible extends CloudFlareTurnstile {
   }
 
   @override
-  Future<void> refresh() async {
-    if (!_view.isRunning()) {
+  Future<void> refresh({bool forceRefresh = true}) async {
+    if (!_view.isRunning() || forceRefresh) {
       await getToken();
     } else if (controller!.isWidgetReady) {
-      // wait util new token received
       _completer = Completer<String?>();
+
+      if (token != null) {
+        if (!await controller!.isExpired()) {
+          if (!_completer!.isCompleted) {
+            _completer?.complete(token);
+            return _completer!.future;
+          }
+        }
+      }
+
       await controller?.refreshToken();
       return _completer!.future;
     }
