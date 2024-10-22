@@ -27,9 +27,7 @@ String _createViewType() {
 String _embedWebIframeJsConnector(String source, String windowDisambiguator) {
   return _embedJsInHtmlSource(
     source,
-    {
-      'parent.$_jsToDartConnectorFN$windowDisambiguator && parent.$_jsToDartConnectorFN$windowDisambiguator(window)'
-    },
+    {'parent.$_jsToDartConnectorFN$windowDisambiguator && parent.$_jsToDartConnectorFN$windowDisambiguator(window)'},
   );
 }
 
@@ -44,13 +42,7 @@ String _embedJsInHtmlSource(
     (prev, elem) => prev + newLine * 2 + elem,
   );
 
-  final whatToEmbed = newLine +
-      scriptOpenTag +
-      newLine +
-      jsContent +
-      newLine +
-      scriptCloseTag +
-      newLine;
+  final whatToEmbed = newLine + scriptOpenTag + newLine + jsContent + newLine + scriptCloseTag + newLine;
 
   final indexToSplit = source.indexOf('</head>');
   final splitSource1 = source.substring(0, indexToSplit);
@@ -60,8 +52,7 @@ String _embedJsInHtmlSource(
 }
 
 /// Cloudflare Turnstile web implementation
-class CloudflareTurnstile extends StatefulWidget
-    implements i.CloudflareTurnstile {
+class CloudflareTurnstile extends StatefulWidget implements i.CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudflareTurnstile({
     required this.siteKey,
@@ -90,8 +81,7 @@ class CloudflareTurnstile extends StatefulWidget
     }
 
     assert(
-      this.options.retryInterval.inMilliseconds > 0 &&
-          this.options.retryInterval.inMilliseconds <= 900000,
+      this.options.retryInterval.inMilliseconds > 0 && this.options.retryInterval.inMilliseconds <= 900000,
       'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
     );
 
@@ -370,8 +360,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     if (widget.options.theme == TurnstileTheme.auto) {
       final brightness = MediaQuery.of(context).platformBrightness;
       final isDark = brightness == Brightness.dark;
-      widget.options.theme =
-          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
     }
   }
 
@@ -483,14 +472,11 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   Widget build(BuildContext context) {
     _setTurnstileTheme();
 
-    final primaryColor = widget.options.theme == TurnstileTheme.light
-        ? const Color(0xFFFAFAFA)
-        : const Color(0xFF232323);
-    final secondaryColor = widget.options.theme == TurnstileTheme.light
-        ? const Color(0xFFDEDEDE)
-        : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor =
-        _isWidgetReady ? secondaryColor : Colors.transparent;
+    final primaryColor =
+        widget.options.theme == TurnstileTheme.light ? const Color(0xFFFAFAFA) : const Color(0xFF232323);
+    final secondaryColor =
+        widget.options.theme == TurnstileTheme.light ? const Color(0xFFDEDEDE) : const Color(0xFF9A9A9A);
+    final adaptiveBorderColor = _isWidgetReady ? secondaryColor : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
@@ -613,10 +599,8 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       _run();
     }
 
-    if (controller!.token != null) {
-      if (!await controller!.isExpired()) {
-        _completer?.complete(token);
-      }
+    if (token != null) {
+      await controller?.refreshToken();
     }
 
     return _completer!.future as Future<String?>;

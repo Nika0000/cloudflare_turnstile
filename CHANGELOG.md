@@ -1,4 +1,8 @@
-## 3.0.0-legacy
+## 3.0.1
+
+* Fixed `forceRefersh` not working for invisible mode.
+
+## 3.0.0
 
 * Added background support for the widget without inserting it into the widget tree.
 * Introduced customizable widget border radius.
