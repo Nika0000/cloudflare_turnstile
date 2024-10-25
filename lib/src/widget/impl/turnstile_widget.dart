@@ -10,13 +10,18 @@ import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-const String _tokenReceivedJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileToken`, token);';
-const String _errorJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileError`, code);';
-const String _tokenExpiredJSHandler = 'window.flutter_inappwebview.callHandler(`TokenExpired`);';
-const String _widgetCreatedJSHandler = 'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
+const String _tokenReceivedJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileToken`, token);';
+const String _errorJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileError`, code);';
+const String _tokenExpiredJSHandler =
+    'window.flutter_inappwebview.callHandler(`TokenExpired`);';
+const String _widgetCreatedJSHandler =
+    'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
 
 /// Cloudflare Turnstile mobile implementation
-class CloudflareTurnstile extends StatefulWidget implements i.CloudflareTurnstile {
+class CloudflareTurnstile extends StatefulWidget
+    implements i.CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudflareTurnstile({
     required this.siteKey,
@@ -45,7 +50,8 @@ class CloudflareTurnstile extends StatefulWidget implements i.CloudflareTurnstil
     }
 
     assert(
-      this.options.retryInterval.inMilliseconds > 0 && this.options.retryInterval.inMilliseconds <= 900000,
+      this.options.retryInterval.inMilliseconds > 0 &&
+          this.options.retryInterval.inMilliseconds <= 900000,
       'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
     );
 
@@ -304,6 +310,8 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     supportZoom: false,
     useWideViewPort: false,
     disableDefaultErrorPage: true,
+    disableContextMenu: true,
+    disableLongPressContextMenuOnLinks: true,
   );
 
   late String data;
@@ -347,7 +355,8 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     if (widget.options.theme == TurnstileTheme.auto) {
       final brightness = MediaQuery.of(context).platformBrightness;
       final isDark = brightness == Brightness.dark;
-      widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      widget.options.theme =
+          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
     }
   }
 
@@ -432,6 +441,23 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
         controller.reload();
       }
     },
+    shouldOverrideUrlLoading: (controller, navigationAction) async {
+      final req = navigationAction.request.url;
+      final host = WebUri(widget.baseUrl).host;
+      final allowedHosts = RegExp(
+        'localhost|'
+        '${RegExp.escape(host)}|'
+        r'challenges\.cloudflare\.com|'
+        'about:blank|'
+        'about:srcdoc',
+      );
+
+      if (allowedHosts.hasMatch(req?.host ?? '')) {
+        return NavigationActionPolicy.ALLOW;
+      }
+
+      return NavigationActionPolicy.CANCEL;
+    },
     onLoadStop: (controller, uri) async {
       if (!_isWidgetReady && !mounted) {
         final contentWidth = await controller.getContentWidth();
@@ -470,11 +496,14 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   Widget build(BuildContext context) {
     _setTurnstileTheme();
 
-    final primaryColor =
-        widget.options.theme == TurnstileTheme.light ? const Color(0xFFFAFAFA) : const Color(0xFF232323);
-    final secondaryColor =
-        widget.options.theme == TurnstileTheme.light ? const Color(0xFFDEDEDE) : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor = _isWidgetReady ? secondaryColor : Colors.transparent;
+    final primaryColor = widget.options.theme == TurnstileTheme.light
+        ? const Color(0xFFFAFAFA)
+        : const Color(0xFF232323);
+    final secondaryColor = widget.options.theme == TurnstileTheme.light
+        ? const Color(0xFFDEDEDE)
+        : const Color(0xFF9A9A9A);
+    final adaptiveBorderColor =
+        _isWidgetReady ? secondaryColor : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 

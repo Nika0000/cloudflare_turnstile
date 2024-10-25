@@ -1,3 +1,8 @@
+## 3.1.1
+
+* Added disabled context menu.
+* Fixed avoiding navigation to unwanted urls.
+
 ## 3.0.1
 
 * Fixed `forceRefersh` not working for invisible mode.
