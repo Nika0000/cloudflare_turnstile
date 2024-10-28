@@ -69,6 +69,7 @@ class TurnstileException implements Exception {
         message =
             'Turnstile was invoked with an invalid sitekey or a sitekey that is no longer active.';
       case 110200:
+        retryable = true;
         errorType = TurnstileError.UNKNOWN_DOMAIN;
         message = 'Domain not allowed.';
       case 110420:

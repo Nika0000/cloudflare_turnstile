@@ -1,3 +1,8 @@
+## 3.1.2
+
+* Fixed allow cf to display invalid domain widget.
+* Fixed Updatede allowed origins.
+
 ## 3.1.1
 
 * Added disabled context menu.

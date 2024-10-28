@@ -442,8 +442,14 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       }
     },
     shouldOverrideUrlLoading: (controller, navigationAction) async {
-      final req = navigationAction.request.url;
+      var reqHost = navigationAction.request.url?.host;
+
+      if (reqHost == null || reqHost.isEmpty) {
+        reqHost = 'about:srcdoc';
+      }
+
       final host = WebUri(widget.baseUrl).host;
+
       final allowedHosts = RegExp(
         'localhost|'
         '${RegExp.escape(host)}|'
@@ -452,7 +458,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
         'about:srcdoc',
       );
 
-      if (allowedHosts.hasMatch(req?.host ?? '')) {
+      if (allowedHosts.hasMatch(reqHost)) {
         return NavigationActionPolicy.ALLOW;
       }
 
