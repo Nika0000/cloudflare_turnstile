@@ -177,11 +177,19 @@ class CloudflareTurnstile extends StatefulWidget
   /// [baseUrl] - A website url corresponding current turnstile widget.
   ///
   /// [options] - Configuration options for the Turnstile widget.
+  ///
+  /// [onTokenReceived] - A Callback invoked upon success of the challange.
+  /// The callback is passed a `token` that can be validated.
+  ///
+  /// [onTokenExpired] - A Callback invoke when the token expires and does not
+  /// reset the widget.
   factory CloudflareTurnstile.invisible({
     required String siteKey,
     String? action,
     String? cData,
     String baseUrl = 'http://localhost',
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
     TurnstileOptions? options,
   }) {
     return _TurnstileInvisible.init(
@@ -189,6 +197,8 @@ class CloudflareTurnstile extends StatefulWidget
       action: action,
       cData: cData,
       baseUrl: baseUrl,
+      onTokenReceived: onTokenReceived,
+      onTokenExpired: onTokenExpired,
       options: options ?? TurnstileOptions(),
     );
   }
@@ -556,7 +566,14 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     String? action,
     String? cData,
     TurnstileOptions? options,
-  }) : super(siteKey: siteKey, controller: TurnstileController()) {
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
+  }) : super(
+          siteKey: siteKey,
+          controller: TurnstileController(),
+          onTokenReceived: onTokenReceived,
+          onTokenExpired: onTokenExpired,
+        ) {
     // Check if the platform is supported
     if (!(Platform.isAndroid || Platform.isIOS)) {
       throw UnsupportedError(
@@ -618,6 +635,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
         callback: (args) {
           final token = args[0] as String;
           controller?.token = token;
+          onTokenReceived?.call(token);
           if (!_completer!.isCompleted) {
             _completer?.complete(token);
           }
@@ -644,6 +662,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
         handlerName: 'TokenExpired',
         callback: (message) {
           // Handle token expiration logic here
+          onTokenExpired?.call();
           if (!_completer!.isCompleted) {
             _completer?.complete(null);
           }

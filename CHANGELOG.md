@@ -1,3 +1,8 @@
+## 3.2.0
+
+* Added `onTokenReceived` callback to invisible mode.
+* Added `onTokenExpired` callback to invisible mode.
+
 ## 3.1.2
 
 * Fixed allow cf to display invalid domain widget.

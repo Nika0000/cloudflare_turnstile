@@ -40,12 +40,20 @@ class CloudflareTurnstile extends StatelessWidget
   /// [baseUrl] - A website url corresponding current turnstile widget.
   ///
   /// [options] - Configuration options for the Turnstile widget.
+  ///
+  /// [onTokenReceived] - A Callback invoked upon success of the challange.
+  /// The callback is passed a `token` that can be validated.
+  ///
+  /// [onTokenExpired] - A Callback invoke when the token expires and does not
+  /// reset the widget.
   factory CloudflareTurnstile.invisible({
     required String siteKey,
     String? action,
     String? cData,
     String baseUrl = 'http://localhost',
     TurnstileOptions? options,
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
   }) {
     throw UnimplementedError(
         'Cannot call this method on the facade implementation of CloudflareTurnstile.');

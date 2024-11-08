@@ -217,16 +217,26 @@ class CloudflareTurnstile extends StatefulWidget
   /// [baseUrl] - A website url corresponding current turnstile widget.
   ///
   /// [options] - Configuration options for the Turnstile widget.
+  ///
+  /// [onTokenReceived] - A Callback invoked upon success of the challange.
+  /// The callback is passed a `token` that can be validated.
+  ///
+  /// [onTokenExpired] - A Callback invoke when the token expires and does not
+  /// reset the widget.
   factory CloudflareTurnstile.invisible({
     required String siteKey,
     String? action,
     String? cData,
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
     TurnstileOptions? options,
   }) {
     return _TurnstileInvisible.init(
       siteKey: siteKey,
       action: action,
       cData: cData,
+      onTokenReceived: onTokenReceived,
+      onTokenExpired: onTokenExpired,
       options: options ?? TurnstileOptions(),
     );
   }
@@ -529,8 +539,15 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     required String siteKey,
     String? action,
     String? cData,
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
     TurnstileOptions? options,
-  }) : super(siteKey: siteKey, controller: TurnstileController()) {
+  }) : super(
+          siteKey: siteKey,
+          controller: TurnstileController(),
+          onTokenReceived: onTokenReceived,
+          onTokenExpired: onTokenExpired,
+        ) {
     _iframe = html.IFrameElement();
     _iframeViewType = _createViewType();
 
@@ -567,6 +584,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
 
       _jsWindowObject['TurnstileToken'] = (String message) {
         controller?.token = message;
+        onTokenReceived?.call(message);
         if (!_completer!.isCompleted) {
           _completer?.complete(token);
         }
@@ -587,6 +605,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       };
 
       _jsWindowObject['TokenExpired'] = (message) {
+        onTokenExpired?.call();
         if (!_completer!.isCompleted) {
           _completer?.complete(null);
         }
