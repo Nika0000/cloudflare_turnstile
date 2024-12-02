@@ -1,3 +1,8 @@
+## 3.2.1
+
+* Updated dependencies to latest version.
+
+
 ## 3.2.0
 
 * Added `onTokenReceived` callback to invisible mode.
