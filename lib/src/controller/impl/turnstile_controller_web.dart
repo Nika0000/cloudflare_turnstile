@@ -1,16 +1,15 @@
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
-
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
+import 'package:cloudflare_turnstile/src/widget/impl/turnstile_widget_web.dart';
 import 'package:flutter/material.dart';
 
 /// Turnstile controller web implementation.
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<js.JsObject> {
+    implements i.TurnstileController<dynamic> {
   /// The connector associated with the controller.
   @override
-  late js.JsObject connector;
+  late dynamic connector;
 
   String? _token;
 
@@ -46,8 +45,9 @@ class TurnstileController extends ChangeNotifier
 
   /// Sets a new connector.
   @override
-  void setConnector(js.JsObject newConnector) {
-    connector = newConnector;
+  void setConnector(dynamic newConnector) {
+    throw UnsupportedError(
+        'setConnector function don`t available web platform');
   }
 
   /// Sets a new token.
@@ -114,8 +114,9 @@ class TurnstileController extends ChangeNotifier
   @override
   Future<void> refreshToken() async {
     try {
-      await connector
-          .callMethod('eval', ['''turnstile.reset(`$_widgetId`);''']);
+      if (_widgetId.isNotEmpty) {
+        turnstileReset(_widgetId);
+      }
       _token = null;
     } catch (error) {
       if (_onError == null) rethrow;
@@ -141,9 +142,7 @@ class TurnstileController extends ChangeNotifier
     if (!_isReady || _widgetId.isEmpty || token == null || token!.isEmpty) {
       return true;
     }
-    final result = connector
-        .callMethod('eval', ['''turnstile.isExpired(`$_widgetId`);''']);
-    return Future.value(result as bool);
+    return turnstileIsExpired(_widgetId);
   }
 
   /// dispose resources

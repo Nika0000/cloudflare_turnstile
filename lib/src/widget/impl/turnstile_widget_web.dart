@@ -1,62 +1,86 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:js' as js;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:ui_web' as ui;
 
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_web.dart';
-import 'package:cloudflare_turnstile/src/html_data.dart';
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
+import 'package:web/web.dart' as web;
 
-const String _tokenReceivedJSHandler = 'TurnstileToken(token);';
-const String _errorJSHandler = 'TurnstileError(code);';
-const String _tokenExpiredJSHandler = 'TokenExpired();';
-const String _widgetCreatedJSHandler = 'TurnstileWidgetId(widgetId);';
+/// Renders the Turnstile widget into the specified HTML element.
+@JS('turnstile.render')
+external String? turnstileRender(web.HTMLElement turnstileView);
 
-const String _jsToDartConnectorFN = 'connect_js_to_flutter';
+/// Executes the Turnstile widget's verification process.
+@JS('turnstile.execute')
+external String? turnstileExecute(web.HTMLElement turnstileView);
 
-String _createViewType() {
-  final iframeId = '_${DateTime.now().microsecondsSinceEpoch}';
-  return '_iframe$iframeId';
-}
+/// Resets the Turnstile widget by ID, clearing any previous verification state.
+@JS('turnstile.reset')
+external void turnstileReset(String? widgetId);
 
-String _embedWebIframeJsConnector(String source, String windowDisambiguator) {
-  return _embedJsInHtmlSource(
-    source,
-    {
-      'parent.$_jsToDartConnectorFN$windowDisambiguator && parent.$_jsToDartConnectorFN$windowDisambiguator(window)'
-    },
-  );
-}
+/// Removes the Turnstile widget from the page by ID.
+@JS('turnstile.remove')
+external void turnstileRemove(String widgetId);
 
-String _embedJsInHtmlSource(
-  String source,
-  Set<String> jsContents,
-) {
-  const newLine = '\n';
-  const scriptOpenTag = '<script>';
-  const scriptCloseTag = '</script>';
-  final jsContent = jsContents.reduce(
-    (prev, elem) => prev + newLine * 2 + elem,
-  );
+/// Retrieves the response token from the Turnstile widget.
+@JS('turnstile.getResponse')
+external String? turnstileGetResponse();
 
-  final whatToEmbed = newLine +
-      scriptOpenTag +
-      newLine +
-      jsContent +
-      newLine +
-      scriptCloseTag +
-      newLine;
+/// Checks whether the Turnstile widget's token has expired.
+@JS('turnstile.isExpired')
+external bool turnstileIsExpired(String widgetId);
 
-  final indexToSplit = source.indexOf('</head>');
-  final splitSource1 = source.substring(0, indexToSplit);
-  final splitSource2 = source.substring(indexToSplit);
+/// Callback triggered when the Turnstile library is successfully loaded.
+@JS('onloadTurnstileCallback')
+external void onLoadTurnstileCallback();
 
-  return '$splitSource1$whatToEmbed\n$splitSource2';
+/// Retrieves the last widget ID created by the Turnstile library.
+@JS('getTurnstileWidgetId')
+external String? getLastWidgetId();
+
+/// Resets the internally tracked widget ID within the Turnstile library.
+@JS('resetTurnstileWidgetId')
+external void resetTurnstileWidgetId();
+
+class _TurnstileHandler {
+  _TurnstileHandler({
+    this.onTokenCallback,
+    this.onWidgetIdCallback,
+    this.onErrorCallback,
+    this.onTokenExpiredCallBack,
+  });
+
+  void Function(String)? onTokenCallback;
+  void Function(String)? onWidgetIdCallback;
+  void Function(int)? onErrorCallback;
+  void Function()? onTokenExpiredCallBack;
+
+  @JSExport('token')
+  void token(JSString token) {
+    onTokenCallback?.call(token.toDart);
+  }
+
+  @JSExport('widgetId')
+  void widgetId(JSString widgetId) {
+    onWidgetIdCallback?.call(widgetId.toDart);
+  }
+
+  @JSExport('error')
+  void error(JSString code) {
+    final errorCode = int.tryParse(code.toDart) ?? -1;
+    onErrorCallback?.call(errorCode);
+  }
+
+  @JSExport('expired')
+  void tokenExpired() {
+    onTokenExpiredCallBack?.call();
+  }
 }
 
 /// Cloudflare Turnstile web implementation
@@ -109,6 +133,44 @@ class CloudflareTurnstile extends StatefulWidget
       !(mode == i.TurnstileMode.nonInteractive && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
       '${this.options.refreshTimeout} has no effect on an $mode widget.',
     ); */
+  }
+
+  /// Create a Cloudflare Turnstile invisible widget.
+  ///
+  /// [siteKey] - A Cloudflare Turnstile sitekey.
+  /// It`s likely generated or obtained from the Cloudflare dashboard.
+  ///
+  /// [action] - A customer value that can be used to differentiate widgets under
+  /// the some sitekey in analytics and witch is returned upon validation.
+  ///
+  /// [cData] - A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// [baseUrl] - A website url corresponding current turnstile widget.
+  ///
+  /// [options] - Configuration options for the Turnstile widget.
+  ///
+  /// [onTokenReceived] - A Callback invoked upon success of the challange.
+  /// The callback is passed a `token` that can be validated.
+  ///
+  /// [onTokenExpired] - A Callback invoke when the token expires and does not
+  /// reset the widget.
+  factory CloudflareTurnstile.invisible({
+    required String siteKey,
+    String? action,
+    String? cData,
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
+    TurnstileOptions? options,
+  }) {
+    return _TurnstileInvisible.init(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      onTokenReceived: onTokenReceived,
+      onTokenExpired: onTokenExpired,
+      options: options ?? TurnstileOptions(),
+    );
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -202,44 +264,6 @@ class CloudflareTurnstile extends StatefulWidget
 
   @override
   State<CloudflareTurnstile> createState() => _CloudflareTurnstileState();
-
-  /// Create a Cloudflare Turnstile invisible widget.
-  ///
-  /// [siteKey] - A Cloudflare Turnstile sitekey.
-  /// It`s likely generated or obtained from the Cloudflare dashboard.
-  ///
-  /// [action] - A customer value that can be used to differentiate widgets under
-  /// the some sitekey in analytics and witch is returned upon validation.
-  ///
-  /// [cData] - A customer payload that can be used to attach customer data to the
-  /// challenge throughout its issuance and which is returned upon validation.
-  ///
-  /// [baseUrl] - A website url corresponding current turnstile widget.
-  ///
-  /// [options] - Configuration options for the Turnstile widget.
-  ///
-  /// [onTokenReceived] - A Callback invoked upon success of the challange.
-  /// The callback is passed a `token` that can be validated.
-  ///
-  /// [onTokenExpired] - A Callback invoke when the token expires and does not
-  /// reset the widget.
-  factory CloudflareTurnstile.invisible({
-    required String siteKey,
-    String? action,
-    String? cData,
-    i.OnTokenReceived? onTokenReceived,
-    i.OnTokenExpired? onTokenExpired,
-    TurnstileOptions? options,
-  }) {
-    return _TurnstileInvisible.init(
-      siteKey: siteKey,
-      action: action,
-      cData: cData,
-      onTokenReceived: onTokenReceived,
-      onTokenExpired: onTokenExpired,
-      options: options ?? TurnstileOptions(),
-    );
-  }
 
   /// Retrives the current token from the widget.
   ///
@@ -347,13 +371,16 @@ class CloudflareTurnstile extends StatefulWidget
 }
 
 class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
-  late html.IFrameElement iframe;
-  late String iframeViewType;
-  late StreamSubscription<dynamic> iframeOnLoadSubscription;
-  late js.JsObject jsWindowObject;
+  late web.HTMLDivElement _turnstileElement;
+  late String _turnstileViewType;
+  //late js.JSObject jsWindowObject;
+  final _turnstileScriptElement = web.HTMLScriptElement();
+  final _turnstileCallbackElement = web.HTMLScriptElement();
+  final _turnstileWidgetElement = web.HTMLDivElement();
 
-  final String _jsToDartConnectorFN = 'connect_js_to_flutter';
   String? widgetId;
+
+  List<String> widgetsList = [];
 
   bool _isWidgetReady = false;
   TurnstileException? _hasError;
@@ -361,19 +388,29 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   @override
   void initState() {
     super.initState();
+    _connectJsToFlutter();
+
+    _turnstileViewType = _createViewType();
+    _turnstileElement = _createTurnstileElement();
+
+    _createTurnstileCallbacksScript(_turnstileCallbackElement);
+
+    _configureTurnstileRoot(
+      _turnstileWidgetElement,
+      siteKey: widget.siteKey,
+      options: widget.options,
+      cData: widget.cData,
+      action: widget.action,
+    );
+
+    _createTurnstileScriptElement(_turnstileScriptElement);
+
+    _registerView(_turnstileViewType);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setTurnstileTheme();
+      _addTurnstileHtml();
     });
-
-    iframeViewType = _createViewType();
-    iframe = _createIFrame();
-
-    _connectJsToFlutter();
-    _registerView(iframeViewType);
-
-    _updateSource();
-    _registerIframeOnLoadCallBack();
   }
 
   void _setTurnstileTheme() {
@@ -385,107 +422,135 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     }
   }
 
-  html.IFrameElement _createIFrame() {
-    final iframeElement = html.IFrameElement()
-      ..id = 'id_$iframeViewType'
-      ..name = 'name_$iframeViewType'
+  void _addTurnstileHtml() {
+    _resetWidget();
+
+    try {
+      if (widgetId != null) {
+        turnstileRemove(widgetId!);
+      }
+
+      _turnstileElement
+        ..append(_turnstileCallbackElement)
+        ..append(_turnstileWidgetElement);
+
+      if (web.document.head?.querySelector('#turnstile-script') == null) {
+        web.document.head?.append(_turnstileScriptElement);
+
+        widget.controller?.isWidgetReady = true;
+        _isWidgetReady = true;
+
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        if (getLastWidgetId() != null) {
+          // Previous turnstile challane is during execute
+          turnstileRemove(getLastWidgetId()!);
+          resetTurnstileWidgetId();
+        }
+
+        widgetId = turnstileRender(_turnstileWidgetElement);
+
+        if (widgetId == null || widgetId!.isEmpty) throw Exception();
+
+        _isWidgetReady = true;
+        widget.controller?.widgetId = widgetId!;
+        widget.controller?.isWidgetReady = true;
+
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      _addError(
+        const TurnstileException('Failed to render Turnstile Widget.'),
+      );
+    }
+  }
+
+  web.HTMLDivElement _createTurnstileElement() {
+    final newElement = web.HTMLDivElement()
+      ..id = 'cf_turnstile_${DateTime.now().microsecondsSinceEpoch}'
       ..style.border = 'none'
-      ..width = widget.options.size.width.toString()
-      ..height = widget.options.size.height.toString()
       ..style.width = '100%'
       ..title = 'CloudFlare_Turnstile'
       ..style.height = '100%';
 
-    return iframeElement;
+    return newElement;
   }
 
-  void _registerIframeOnLoadCallBack() {
-    _resetWidget();
-
-    iframeOnLoadSubscription = iframe.onLoad.listen((event) {
-      setState(() => _isWidgetReady = true);
-      widget.controller?.isWidgetReady = _isWidgetReady;
-    });
+  String _createViewType() {
+    final iframeId = '_${DateTime.now().microsecondsSinceEpoch}';
+    return '_iframe$iframeId';
   }
 
   void _connectJsToFlutter() {
-    js.context['$_jsToDartConnectorFN$iframeViewType'] = (js.JsObject window) {
-      jsWindowObject = window;
-
-      jsWindowObject['TurnstileToken'] = (String message) {
-        widget.controller?.token = message;
-        widget.onTokenReceived?.call(message);
-      };
-
-      jsWindowObject['TurnstileError'] = (String message) {
-        final errorCode = int.tryParse(message) ?? -1;
-        _addError(TurnstileException.fromCode(errorCode));
-      };
-
-      jsWindowObject['TurnstileWidgetId'] = (String message) {
-        widgetId = message;
-        widget.controller?.widgetId = message;
-      };
-
-      jsWindowObject['TokenExpired'] = (message) {
+    final handler = _TurnstileHandler(
+      onTokenCallback: (token) {
+        widget.controller?.token = token;
+        widget.onTokenReceived?.call(token);
+      },
+      onWidgetIdCallback: (cWidgetId) {
+        widgetId = cWidgetId;
+        widget.controller?.widgetId = cWidgetId;
+      },
+      onTokenExpiredCallBack: () {
         widget.onTokenExpired?.call();
-      };
+      },
+      onErrorCallback: (code) {
+        _addError(TurnstileException.fromCode(code));
+      },
+    );
 
-      widget.controller?.setConnector(jsWindowObject);
-    };
+    web.window.setProperty(
+      'turnstileHandler'.toJS,
+      createJSInteropWrapper(handler),
+    );
   }
 
   void _registerView(String viewType) {
     ui.platformViewRegistry.registerViewFactory(
       viewType,
-      (int viewId) => iframe,
-    );
-  }
-
-  void _updateSource() {
-    iframe.srcdoc = _embedWebIframeJsConnector(
-      htmlData(
-        siteKey: widget.siteKey,
-        action: widget.action,
-        cData: widget.cData,
-        options: widget.options,
-        onTokenReceived: _tokenReceivedJSHandler,
-        onTurnstileError: _errorJSHandler,
-        onTokenExpired: _tokenExpiredJSHandler,
-        onWidgetCreated: _widgetCreatedJSHandler,
-      ),
-      iframeViewType,
+      (int viewId) => _turnstileElement,
     );
   }
 
   void _resetWidget() {
-    setState(() {
-      _hasError = null;
-      _isWidgetReady = false;
-      widget.controller?.error = null;
-      widget.controller?.isWidgetReady = false;
-    });
+    _hasError = null;
+    _isWidgetReady = false;
+    widget.controller?.error = null;
+    widget.controller?.isWidgetReady = false;
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _addError(TurnstileException error) {
-    setState(() {
-      _hasError = error;
-      _isWidgetReady = error.retryable;
-      widget.controller?.error = error;
-      widget.controller?.isWidgetReady = error.retryable;
-      widget.onError?.call(error);
-    });
+    _hasError = error;
+    _isWidgetReady = error.retryable;
+    widget.controller?.error = error;
+    widget.controller?.isWidgetReady = error.retryable;
+    widget.onError?.call(error);
+    if (!mounted) return;
+    setState(() {});
   }
 
   late final Widget _view = HtmlElementView(
     key: widget.key,
-    viewType: iframeViewType,
+    viewType: _turnstileViewType,
   );
 
   @override
   void dispose() {
-    iframeOnLoadSubscription.cancel();
-    iframe.remove();
+    if (widgetId != null && widgetId!.isNotEmpty) {
+      final lastWidgetId = getLastWidgetId();
+      if (lastWidgetId == widgetId) {
+        turnstileRemove(widgetId!);
+      }
+    }
+    _turnstileElement.remove();
+    _turnstileScriptElement.remove();
+    _turnstileCallbackElement.remove();
     super.dispose();
   }
 
@@ -539,86 +604,113 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     required String siteKey,
     String? action,
     String? cData,
-    i.OnTokenReceived? onTokenReceived,
-    i.OnTokenExpired? onTokenExpired,
+    super.onTokenReceived,
+    super.onTokenExpired,
     TurnstileOptions? options,
   }) : super(
           siteKey: siteKey,
           controller: TurnstileController(),
-          onTokenReceived: onTokenReceived,
-          onTokenExpired: onTokenExpired,
         ) {
-    _iframe = html.IFrameElement();
-    _iframeViewType = _createViewType();
+    _iframe = web.HTMLDivElement();
 
-    final data = htmlData(
+    _createTurnstileCallbacksScript(_turnstileCallbacks);
+
+    _configureTurnstileRoot(
+      _iframe,
       siteKey: siteKey,
-      action: action,
-      cData: cData,
       options: options!,
-      onTokenReceived: _tokenReceivedJSHandler,
-      onTurnstileError: _errorJSHandler,
-      onTokenExpired: _tokenExpiredJSHandler,
-      onWidgetCreated: _widgetCreatedJSHandler,
+      cData: cData,
+      action: action,
     );
 
-    _iframe.srcdoc = _embedWebIframeJsConnector(data, _iframeViewType);
+    _createTurnstileScriptElement(_turnstileScript);
+
     _iframe.style.display = 'none';
+    _iframe.appendChild(_turnstileCallbacks);
 
     _connectJsToFlutter();
-
-    _iframeOnLoadSubscription = _iframe.onLoad.listen(
-      (_) => controller?.isWidgetReady = true,
-    );
   }
 
-  late html.IFrameElement _iframe;
-  late js.JsObject _jsWindowObject;
-  late String _iframeViewType;
-  late StreamSubscription<dynamic> _iframeOnLoadSubscription;
+  late web.HTMLDivElement _iframe;
+
+  final web.HTMLScriptElement _turnstileScript = web.HTMLScriptElement();
+  final web.HTMLScriptElement _turnstileCallbacks = web.HTMLScriptElement();
+
   Completer<dynamic>? _completer;
 
-  void _connectJsToFlutter() {
-    js.context['$_jsToDartConnectorFN$_iframeViewType'] = (js.JsObject window) {
-      _jsWindowObject = window;
+  String _widgetId = '';
+  bool _isWidgetReady = false;
+  String? _token;
 
-      _jsWindowObject['TurnstileToken'] = (String message) {
-        controller?.token = message;
-        onTokenReceived?.call(message);
+  void _connectJsToFlutter() {
+    final handler = _TurnstileHandler(
+      onTokenCallback: (token) {
+        _token = token;
+
+        onTokenReceived?.call(token);
         if (!_completer!.isCompleted) {
           _completer?.complete(token);
         }
-      };
-
-      _jsWindowObject['TurnstileError'] = (String message) {
-        final errorCode = int.tryParse(message);
-        final error = TurnstileException.fromCode(errorCode ?? -1);
-
-        controller?.error = error;
-        if (!_completer!.isCompleted) {
-          _completer?.completeError(error);
-        }
-      };
-
-      _jsWindowObject['TurnstileWidgetId'] = (String message) {
-        controller!.widgetId = message;
-      };
-
-      _jsWindowObject['TokenExpired'] = (message) {
+      },
+      onWidgetIdCallback: (widgetId) {
+        _isWidgetReady = true;
+        _widgetId = widgetId;
+        controller?.isWidgetReady = true;
+      },
+      onTokenExpiredCallBack: () {
         onTokenExpired?.call();
         if (!_completer!.isCompleted) {
           _completer?.complete(null);
         }
-      };
+      },
+      onErrorCallback: (code) {
+        if (!_completer!.isCompleted) {
+          _completer?.completeError(TurnstileException.fromCode(code));
+        }
+      },
+    );
 
-      controller?.setConnector(_jsWindowObject);
-    };
+    web.window.setProperty(
+      'turnstileHandler'.toJS,
+      createJSInteropWrapper(handler),
+    );
   }
 
-  void _run() => html.document.body?.append(_iframe);
+  void _run() {
+    try {
+      _isWidgetReady = false;
+
+      web.document.body?.append(_iframe);
+
+      if (_widgetId.isNotEmpty) {
+        turnstileRemove(_widgetId);
+      }
+
+      if (web.document.head?.querySelector('#turnstile-script') == null) {
+        web.document.head?.append(_turnstileScript);
+
+        _isWidgetReady = true;
+      } else {
+        if (getLastWidgetId() != null) {
+          turnstileRemove(getLastWidgetId()!);
+          resetTurnstileWidgetId();
+        }
+
+        _widgetId = turnstileRender(_iframe) ?? '';
+
+        if (_widgetId.isEmpty) throw Exception();
+
+        _isWidgetReady = true;
+      }
+    } catch (e) {
+      _completer?.completeError(
+        const TurnstileException('Failed to render Turnstile Widget.'),
+      );
+    }
+  }
 
   bool _isRunning() {
-    if (html.document.body != null && html.document.body!.contains(_iframe)) {
+    if (web.document.body != null && web.document.body!.contains(_iframe)) {
       return true;
     }
     return false;
@@ -632,29 +724,29 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       _run();
     }
 
-    if (token != null) {
-      await controller?.refreshToken();
+    if (_token != null) {
+      turnstileReset(_widgetId);
     }
 
     return _completer!.future as Future<String?>;
   }
 
   @override
-  String? get id => controller?.widgetId;
+  String? get id => _widgetId;
 
   @override
-  Future<bool> isExpired() {
-    return controller!.isExpired();
+  Future<bool> isExpired() async {
+    return turnstileIsExpired(_widgetId);
   }
 
   @override
   Future<void> refresh({bool forceRefresh = true}) async {
-    if (!_isRunning() || !controller!.isWidgetReady || forceRefresh) {
+    if (!_isRunning() || !_isWidgetReady || forceRefresh) {
       await getToken();
-    } else if (controller!.isWidgetReady) {
+    } else if (_isWidgetReady) {
       _completer = Completer<String?>();
 
-      if (token != null) {
+      if (_token != null) {
         if (!await controller!.isExpired()) {
           if (!_completer!.isCompleted) {
             _completer?.complete(token);
@@ -662,18 +754,88 @@ class _TurnstileInvisible extends CloudflareTurnstile {
           }
         }
       }
-
-      await controller?.refreshToken();
+      turnstileReset(_widgetId);
       return _completer!.future;
     }
   }
 
   @override
-  String? get token => controller?.token;
+  String? get token => _token;
 
   @override
   Future<void> dispose() async {
-    await _iframeOnLoadSubscription.cancel();
+    if (_widgetId.isNotEmpty && getLastWidgetId() != null) {
+      turnstileRemove(getLastWidgetId()!);
+    }
     _iframe.remove();
   }
+}
+
+void _configureTurnstileRoot(
+  web.HTMLDivElement rootElement, {
+  required String siteKey,
+  required TurnstileOptions options,
+  String? action,
+  String? cData,
+}) {
+  rootElement
+    ..id = 'cf-turnstile'
+    ..setAttribute('data-sitekey', siteKey)
+    ..setAttribute('data-action', action ?? '')
+    ..setAttribute('data-cdata', cData ?? '')
+    ..setAttribute('data-theme', options.theme.name)
+    ..setAttribute('data-size', options.size.name)
+    ..setAttribute('data-language', options.language)
+    ..setAttribute('data-retry', options.retryAutomatically ? 'auto' : 'never')
+    ..setAttribute(
+      'data-retry-interval',
+      options.retryInterval.inMilliseconds.toString(),
+    )
+    ..setAttribute('data-refresh-expired', options.refreshExpired.name)
+    ..setAttribute('data-refresh-timeout', options.refreshTimeout.name)
+    ..setAttribute('data-callback', 'onTokenReceived')
+    ..setAttribute('data-error-callback', 'onTurnstileError')
+    ..setAttribute('data-expired-callback', 'onTokenExpired');
+}
+
+void _createTurnstileCallbacksScript(web.HTMLScriptElement scriptElement) {
+  scriptElement
+    ..id = 'cf_turnstile_cb_scripts'
+    ..innerHTML = '''
+  window.onloadTurnstileCallback = function () {
+   const turnstileID = turnstile.render("#cf-turnstile");
+   turnstileWidgetId = turnstileID;
+   turnstileHandler.widgetId(turnstileID);
+  };
+
+  function onTokenReceived(token) {
+    return  turnstileHandler.token(token);
+  }
+
+  function onTurnstileError(code) {
+    return turnstileHandler.error(code);
+  }
+
+  function onTokenExpired() {
+    return turnstileHandler.expired();
+  }
+
+  function getTurnstileWidgetId() {
+    return window.turnstileWidgetId;
+  }
+
+  function resetTurnstileWidgetId() {
+    window.turnstileWidgetId = undefined;
+  }
+'''
+        .toJS;
+}
+
+void _createTurnstileScriptElement(web.HTMLScriptElement scriptElement) {
+  scriptElement
+    ..id = 'turnstile-script'
+    ..type = 'text/javascript'
+    ..defer = true
+    ..src =
+        'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback';
 }

@@ -3,7 +3,6 @@ import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller.dart';
-import 'package:cloudflare_turnstile/src/html_data.dart';
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
@@ -349,7 +348,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       _setTurnstileTheme();
     });
 
-    data = htmlData(
+    data = _configurehtmlData(
       siteKey: widget.siteKey,
       action: widget.action,
       cData: widget.cData,
@@ -374,7 +373,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     controller
       ..addJavaScriptHandler(
         handlerName: 'TurnstileToken',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (!mounted) return;
           final token = args[0] as String;
           widget.controller?.token = token;
@@ -383,7 +382,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileError',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (_hasError != null) return;
           final errorCode = int.tryParse(args[0] as String);
           _addError(TurnstileException.fromCode(errorCode ?? -1));
@@ -391,7 +390,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileWidgetId',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (!mounted) return;
           widgetId = args[0] as String;
           widget.controller?.widgetId = widgetId!;
@@ -584,7 +583,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
     _completer = Completer<dynamic>();
 
-    final data = htmlData(
+    final data = _configurehtmlData(
       siteKey: siteKey,
       action: action,
       cData: cData,
@@ -632,7 +631,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     wController
       ..addJavaScriptHandler(
         handlerName: 'TurnstileToken',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           final token = args[0] as String;
           controller?.token = token;
           onTokenReceived?.call(token);
@@ -643,7 +642,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileError',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           final errorCode = int.tryParse(args[0] as String);
           final error = TurnstileException.fromCode(errorCode ?? -1);
 
@@ -654,7 +653,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileWidgetId',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           controller!.widgetId = args[0] as String;
         },
       )
@@ -722,3 +721,115 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     await _view.dispose();
   }
 }
+
+String _configurehtmlData({
+  required String siteKey,
+  required TurnstileOptions options,
+  required String onTokenReceived,
+  required String onTurnstileError,
+  required String onTokenExpired,
+  required String onWidgetCreated,
+  String? action,
+  String? cData,
+}) {
+  final exp = RegExp(
+    '<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>',
+  );
+
+  final replacedText = _source.replaceAllMapped(exp, (match) {
+    switch (match.group(1)) {
+      case 'SITE_KEY':
+        return siteKey;
+      case 'ACTION':
+        return action ?? '';
+      case 'CDATA':
+        return cData ?? '';
+      case 'THEME':
+        return options.theme.name;
+      case 'SIZE':
+        return options.size.name;
+      case 'LANGUAGE':
+        return options.language;
+      case 'RETRY':
+        return options.retryAutomatically ? 'auto' : 'never';
+      case 'RETRY_INTERVAL':
+        return options.retryInterval.inMilliseconds.toString();
+      case 'REFRESH_EXPIRED':
+        return options.refreshExpired.name;
+      case 'REFRESH_TIMEOUT':
+        return options.refreshTimeout.name;
+      case 'TOKEN_RECIVED':
+        return onTokenReceived;
+      case 'ERROR':
+        return onTurnstileError;
+      case 'TOKEN_EXPIRED':
+        return onTokenExpired;
+      case 'CREATED':
+        return onWidgetCreated;
+      default:
+        return match.group(0) ?? '';
+    }
+  });
+
+  return replacedText;
+}
+
+String _source = """
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <link rel="icon" href="data:,">
+   <meta name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+
+   
+</head>
+
+<body>
+   <div id="cf-turnstile"></div>
+   <script>
+      turnstile.ready(function () {
+           if (!document.getElementById('cf-turnstile').hasChildNodes()) {
+               const widgetId = turnstile.render('#cf-turnstile', {
+                  sitekey: '<TURNSTILE_SITE_KEY>',
+                  action: '<TURNSTILE_ACTION>',
+                  cData: '<TURNSTILE_CDATA>',
+                  theme: '<TURNSTILE_THEME>',
+                  size: '<TURNSTILE_SIZE>',
+                  language: '<TURNSTILE_LANGUAGE>',
+                  retry: '<TURNSTILE_RETRY>',
+                  'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
+                  'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
+                  'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
+                  'feedback-enabled': false,
+                  callback: function (token) {
+                     <TURNSTILE_TOKEN_RECIVED>
+                  },
+                  'error-callback': function (code) {
+                     <TURNSTILE_ERROR>
+                  },
+                  'expired-callback': function () {
+                     <TURNSTILE_TOKEN_EXPIRED>
+                  }
+               });
+
+               <TURNSTILE_CREATED>
+           }
+        });
+
+   </script>
+   <style>
+      * {
+         overflow: hidden;
+         margin: 0;
+         padding: 0;
+      }
+   </style>
+</body>
+
+</html>
+
+""";

@@ -1,3 +1,7 @@
+## 3.3.0-beta
+
+* Added `WASM` support for web platform.
+
 ## 3.2.1
 
 * Updated dependencies to latest version.
