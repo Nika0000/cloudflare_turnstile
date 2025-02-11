@@ -4,12 +4,21 @@
 
 Cloudflare turnstile is a free CAPTCHAs Alternative, Turnstile delivers frustration-free, CAPTCHA-free web experiences to website visitors - with just a simple snippet of free code. Moreover, Turnstile stops abuse and confirms visitors are real without the data privacy concerns or awful user experience of CAPTCHAs.
 
-### ⚠️ This package is unofficial and not endorsed by Cloudflare. Use it at your own discretion.
+> [!WARNING]
+>
+> This package is unofficial and not endorsed by Cloudflare. Use it at your own discretion.
 
 ## Installation
 
 ```sh
 flutter pub add cloudflare_turnstile
+```
+
+For WASM support, you can use the beta version:
+
+```yaml
+dependencies:
+  cloudflare_turnstile: ^3.3.0-beta
 ```
 
 # Example
@@ -84,7 +93,9 @@ class TurnstileService {
 }
 ```
 
-> ⚠️ It's important to call `dispose()` on the `CloudflareTurnstile` instance when you no longer need it. This ensures that resources are properly cleaned up, preventing any potential memory issues.
+> [!WARNING]
+>
+> It's important to call `dispose()` on the `CloudflareTurnstile` instance when you no longer need it. This ensures that resources are properly cleaned up, preventing any potential memory issues.
 
 ## Contribution
 Your contributions are welcome and greatly valued! If you have ideas, suggestions, or improvements, feel free to open an issue or submit a pull request. Every bit of help is appreciated, and your input can make a big difference. Just ensure your contributions fit with the project's goals and guidelines.
