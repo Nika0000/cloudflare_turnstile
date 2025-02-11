@@ -9,12 +9,14 @@ import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 /// Cloudflare Turnstile mobile implementation
-class CloudFlareTurnstile extends StatefulWidget implements i.CloudFlareTurnstile {
+class CloudFlareTurnstile extends StatefulWidget
+    implements i.CloudFlareTurnstile {
   /// Create a Cloudflare Turnstile Widget
   CloudFlareTurnstile({
     required this.siteKey,
@@ -200,7 +202,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
   final String _tokenRecivedJSHandler = 'TurnstileToken.postMessage(token);';
   final String _errorJSHandler = 'TurnstileError.postMessage(code);';
   final String _tokenExpiredJSHandler = 'TokenExpired.postMessage();';
-  final String _widgetCreatedJSHandler = 'TurnstileWidgetId.postMessage(widgetId);';
+  final String _widgetCreatedJSHandler =
+      'TurnstileWidgetId.postMessage(widgetId);';
 
   @override
   void initState() {
@@ -212,7 +215,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDark = brightness == Brightness.dark;
-        widget.options.theme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+        widget.options.theme =
+            isDark ? TurnstileTheme.dark : TurnstileTheme.light;
       });
     }
 
@@ -316,22 +320,34 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
               });
             }
           },
-          onNavigationRequest: (request) {
-            if (Platform.isIOS) {
-              final uri = Uri.tryParse(request.url);
-              final baseUri = Uri.tryParse(widget.baseUrl);
+          onNavigationRequest: (request) async {
+            var req = Uri.tryParse(request.url);
 
-              if (uri?.host == 'challenges.cloudflare.com' ||
-                  uri?.host == baseUri?.host ||
-                  request.url == 'about:srcdoc' ||
-                  request.url == 'about:blank') {
-                return NavigationDecision.navigate;
-              } else {
-                return NavigationDecision.prevent;
-              }
-            } else {
+            final isCfOrigin = req?.host.contains('cloudflare.com') ?? false;
+            final isTermsPath = req?.path.contains('website-terms') ?? false;
+            final isPrivacyPath = req?.path.contains('privacypolicy') ?? false;
+
+            if (req != null && isCfOrigin && (isTermsPath || isPrivacyPath)) {
+              await launchUrl(req, mode: LaunchMode.externalApplication);
               return NavigationDecision.prevent;
             }
+
+            if (req == null || req.host.isEmpty) {
+              req = Uri.parse('about:srcdoc');
+            }
+            final allowedHosts = RegExp(
+              'localhost|'
+              '${RegExp.escape(widget.baseUrl)}|'
+              r'challenges\.cloudflare\.com|'
+              'about:blank|'
+              'about:srcdoc',
+            );
+
+            if (allowedHosts.hasMatch(req.host)) {
+              return NavigationDecision.navigate;
+            }
+
+            return NavigationDecision.prevent;
           },
           onHttpAuthRequest: (_) => NavigationDecision.prevent,
           onHttpError: (error) {
@@ -352,7 +368,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
 
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(false);
-      (controller.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
+      (controller.platform as AndroidWebViewController)
+          .setOnPlatformPermissionRequest(
         (request) => request.deny(),
       );
     }
@@ -495,7 +512,8 @@ class _CloudFlareTurnstileState extends State<CloudFlareTurnstile> {
       if (_hasError!.retryable && widget.mode != i.TurnstileMode.invisible) {
         widget.errorBuilder?.call(context, _hasError!);
       } else {
-        return widget.errorBuilder?.call(context, _hasError!) ?? const SizedBox.shrink();
+        return widget.errorBuilder?.call(context, _hasError!) ??
+            const SizedBox.shrink();
       }
     }
 
