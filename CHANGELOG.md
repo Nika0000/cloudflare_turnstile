@@ -1,4 +1,8 @@
-## 2.0.4
+## 2.1.5
+
+* Fixed allow navigation to Privacy Policy & Terms
+
+## 2.1.4
 
 * Update Readme
 * Update Spelling of variables
