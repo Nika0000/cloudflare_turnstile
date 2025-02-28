@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
     size: TurnstileSize.normal,
     theme: TurnstileTheme.light,
     refreshExpired: TurnstileRefreshExpired.manual,
-    language: 'en',
+    language: 'ar',
     retryAutomatically: false,
   );
 

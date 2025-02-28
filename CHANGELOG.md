@@ -1,3 +1,7 @@
+## 3.3.1
+
+* Fixed web deprecated usages
+
 ## 3.3.0-beta
 
 * Added `WASM` support for web platform.
