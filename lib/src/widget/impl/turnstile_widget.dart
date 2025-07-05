@@ -566,13 +566,11 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     String? action,
     String? cData,
     TurnstileOptions? options,
-    i.OnTokenReceived? onTokenReceived,
-    i.OnTokenExpired? onTokenExpired,
+    super.onTokenReceived,
+    super.onTokenExpired,
   }) : super(
           siteKey: siteKey,
           controller: TurnstileController(),
-          onTokenReceived: onTokenReceived,
-          onTokenExpired: onTokenExpired,
         ) {
     // Check if the platform is supported
     if (!(Platform.isAndroid || Platform.isIOS)) {

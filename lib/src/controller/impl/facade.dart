@@ -69,7 +69,7 @@ class TurnstileController extends ChangeNotifier
   ///
   /// This assigns a new ID to the current Turnstile widget instance.
   @override
-  set widgetId(String id) {
+  set widgetId(String? id) {
     throw UnimplementedError('Cannot call this function on the facade.');
   }
 
