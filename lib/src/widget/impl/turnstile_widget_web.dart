@@ -227,6 +227,7 @@ class CloudflareTurnstile extends StatefulWidget
     required String siteKey,
     String? action,
     String? cData,
+    String? baseUrl,
     i.OnTokenReceived? onTokenReceived,
     i.OnTokenExpired? onTokenExpired,
     TurnstileOptions? options,
