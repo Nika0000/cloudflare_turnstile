@@ -2,6 +2,7 @@
 
 * Fixed missing `baseUrl` paramter in the invisible Turnstile widget on web.
 * Migrated from the deprecated `js` package to `web` package for improved web compatibility.
+* Added Windows platform support.
 
 ## 3.2.1
 

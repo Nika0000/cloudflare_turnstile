@@ -337,9 +337,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     super.initState();
 
     // Check if the platform is supported
-    if (!(Platform.isAndroid || Platform.isIOS)) {
+    if (!(Platform.isAndroid || Platform.isIOS || Platform.isWindows)) {
       throw UnsupportedError(
-        'CloudflareTurnstile only supports Android, iOS and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS, Windows and Web platforms.',
       );
     }
 
@@ -573,9 +573,9 @@ class _TurnstileInvisible extends CloudflareTurnstile {
           controller: TurnstileController(),
         ) {
     // Check if the platform is supported
-    if (!(Platform.isAndroid || Platform.isIOS)) {
+    if (!(Platform.isAndroid || Platform.isIOS || Platform.isWindows)) {
       throw UnsupportedError(
-        'CloudflareTurnstile only supports Android, iOS and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS, Windows and Web platforms.',
       );
     }
 

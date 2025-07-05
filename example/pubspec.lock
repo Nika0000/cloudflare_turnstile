@@ -39,7 +39,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "3.2.1"
+    version: "3.4.0-beta"
   collection:
     dependency: transitive
     description:
