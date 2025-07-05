@@ -48,13 +48,7 @@ class _DartTurnstile {
 
   bool isScriptLoaded() => web.window.hasProperty('turnstile'.toJS).toDart;
 
-  web.HTMLDivElement buildWidget({
-    required String siteKey,
-    required TurnstileOptions options,
-    String? action,
-    String? cData,
-  }) {
-    // If already loaded turnstile screept there is no need to load again
+  void loadScript() {
     if (!isScriptLoaded()) {
       final mainScript = web.HTMLScriptElement()
         ..id = 'turnstile-script'
@@ -65,7 +59,14 @@ class _DartTurnstile {
 
       web.document.head?.append(mainScript);
     }
+  }
 
+  web.HTMLDivElement buildWidget({
+    required String siteKey,
+    required TurnstileOptions options,
+    String? action,
+    String? cData,
+  }) {
     final widget = web.HTMLDivElement()
       ..style.width = '100%'
       ..style.height = '100%'
@@ -493,12 +494,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     key: widget.key,
     viewType: _widgetViewId,
     onPlatformViewCreated: (id) {
-      if (_turnstile.isScriptLoaded() && widgetId == null) {
-        widgetId = _renderWidget('.cf-turnstile_$_widgetViewId');
-        widget.controller?.widgetId = widgetId;
-        setState(() => _isWidgetReady = true);
-        widget.controller?.isWidgetReady = _isWidgetReady;
-      }
+      _turnstile.loadScript();
     },
   );
 
@@ -622,6 +618,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     )..className = 'cf-turnstile_$_iframeViewType';
 
     web.document.body?.append(_widget);
+    turnstile.loadScript();
 
     if (turnstile.isScriptLoaded()) {
       controller?.widgetId = _renderWidget('.cf-turnstile_$_iframeViewType');
