@@ -33,7 +33,7 @@ class CloudflareTurnstile extends StatefulWidget
     this.controller,
     this.onTokenReceived,
     this.onTokenExpired,
-    this.onError,
+    this.onError, this.inAppWebViewSettings,
   }) : options = options ?? TurnstileOptions() {
     if (action != null) {
       assert(
@@ -107,6 +107,8 @@ class CloudflareTurnstile extends StatefulWidget
   /// A controller for managing interactions with the Turnstile widget.
   @override
   final TurnstileController? controller;
+
+  final InAppWebViewSettings? inAppWebViewSettings;
 
   /// A Callback invoked upon success of the challange.
   /// The callback is passed a `token` that can be validated.
@@ -191,6 +193,7 @@ class CloudflareTurnstile extends StatefulWidget
     i.OnTokenReceived? onTokenReceived,
     i.OnTokenExpired? onTokenExpired,
     TurnstileOptions? options,
+    InAppWebViewSettings? inAppWebViewSettings,
   }) {
     return _TurnstileInvisible.init(
       siteKey: siteKey,
@@ -200,6 +203,7 @@ class CloudflareTurnstile extends StatefulWidget
       onTokenReceived: onTokenReceived,
       onTokenExpired: onTokenExpired,
       options: options ?? TurnstileOptions(),
+      inAppWebViewSettings: inAppWebViewSettings,
     );
   }
 
@@ -311,20 +315,8 @@ class CloudflareTurnstile extends StatefulWidget
 class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   final GlobalKey webViewKey = GlobalKey();
 
-  final InAppWebViewSettings _settings = InAppWebViewSettings(
-    disableHorizontalScroll: true,
-    verticalScrollBarEnabled: false,
-    transparentBackground: true,
-    disallowOverScroll: true,
-    disableVerticalScroll: true,
-    supportZoom: false,
-    useWideViewPort: false,
-    disableDefaultErrorPage: true,
-    disableContextMenu: true,
-    disableLongPressContextMenuOnLinks: true,
-  );
-
   late String data;
+  late InAppWebViewSettings _settings;
 
   String? widgetId;
 
@@ -348,6 +340,19 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setTurnstileTheme();
     });
+
+    _settings = widget.inAppWebViewSettings ?? InAppWebViewSettings(
+      disableHorizontalScroll: true,
+      verticalScrollBarEnabled: false,
+      transparentBackground: true,
+      disallowOverScroll: true,
+      disableVerticalScroll: true,
+      supportZoom: false,
+      useWideViewPort: false,
+      disableDefaultErrorPage: true,
+      disableContextMenu: true,
+      disableLongPressContextMenuOnLinks: true,
+    );
 
     data = htmlData(
       siteKey: widget.siteKey,
@@ -566,6 +571,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     String? action,
     String? cData,
     TurnstileOptions? options,
+    InAppWebViewSettings? inAppWebViewSettings,
     i.OnTokenReceived? onTokenReceived,
     i.OnTokenExpired? onTokenExpired,
   }) : super(
@@ -622,6 +628,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
         }
       },
       onPermissionRequest: (_, __) async => PermissionResponse(),
+      initialSettings: inAppWebViewSettings,
     );
   }
 
