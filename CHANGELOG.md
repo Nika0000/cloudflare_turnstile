@@ -1,3 +1,6 @@
+## 3.4.1
+* Code optimization and cleanup.
+
 ## 3.4.0-beta
 
 * Fixed missing `baseUrl` paramter in the invisible Turnstile widget on web.

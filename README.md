@@ -14,16 +14,11 @@ Cloudflare turnstile is a free CAPTCHAs Alternative, Turnstile delivers frustrat
 flutter pub add cloudflare_turnstile
 ```
 
-For WASM support, you can use the beta version:
-
-```yaml
-dependencies:
-  cloudflare_turnstile: ^3.3.0-beta
-```
+For Windows platform, please follow the inappwebview windows setup [instructions](https://inappwebview.dev/docs/intro/#setup-windows).
 
 # Example
 
-Here`s a quick example that show how to add Cloudflare Turnstile widget to your flutter app
+Here's a quick example that shows how to add Cloudflare Turnstile widget to your flutter app
 
 ```dart
 import 'package:flutter/material.dart';
@@ -57,7 +52,7 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
-> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Widget Domans list. `baseUrl` is must be a same as list of domains when creating a Widget.
+> For Android and iOS platforms you need to provide the `baseUrl` parameter with the actual URL of your Turnstile Widget Domains list. `baseUrl` must be the same as the list of domains when creating a Widget.
 
 ## Using Turnstile invisible mode
 
@@ -68,7 +63,7 @@ import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 
 
 class TurnstileService {
-  /// Retrives the CloudFlare Turnstile token using invisible mode.
+  /// Retrieves the CloudFlare Turnstile token using invisible mode.
   static Future<String?> get token async {
     // Initialize an instance of invisible Cloudflare Turnstile with your site key
     final turnstile = CloudflareTurnstile.invisible(
