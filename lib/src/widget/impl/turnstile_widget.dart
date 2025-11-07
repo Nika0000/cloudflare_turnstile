@@ -449,9 +449,12 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     super.initState();
 
     // Check if the platform is supported
-    if (!(Platform.isAndroid || Platform.isIOS || Platform.isWindows)) {
+    if (!(Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS)) {
       throw UnsupportedError(
-        'CloudflareTurnstile only supports Android, iOS, Windows and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS, Windows, Macos and Web platforms.',
       );
     }
 

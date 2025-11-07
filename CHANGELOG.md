@@ -1,3 +1,6 @@
+## 3.5.0
+* Added MacOS platform support.
+
 ## 3.4.1
 * Code optimization and cleanup.
 
