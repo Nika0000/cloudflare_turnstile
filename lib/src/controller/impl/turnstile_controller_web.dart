@@ -1,22 +1,28 @@
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
+import 'dart:js_interop' show JS;
 
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:flutter/material.dart';
 
+@JS('turnstile.isExpired')
+external bool _isTokenExpired([String? widgetId]);
+
+@JS('turnstile.reset')
+external void _resetWidget([String? widgetId]);
+
 /// Turnstile controller web implementation.
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<js.JsObject> {
+    implements i.TurnstileController<dynamic> {
   /// The connector associated with the controller.
   @override
-  late js.JsObject connector;
+  late dynamic connector;
 
   String? _token;
 
   TurnstileException? _error;
 
-  String _widgetId = '';
+  String? _widgetId = '';
 
   bool _isReady = false;
 
@@ -30,7 +36,7 @@ class TurnstileController extends ChangeNotifier
   ///
   /// This ID is used to uniquely identify the Turnstile widget instance.
   @override
-  String get widgetId => _widgetId;
+  String? get widgetId => _widgetId;
 
   /// Retrieves the widget's ready state.
   ///
@@ -46,9 +52,7 @@ class TurnstileController extends ChangeNotifier
 
   /// Sets a new connector.
   @override
-  void setConnector(js.JsObject newConnector) {
-    connector = newConnector;
-  }
+  void setConnector(dynamic newConnector) {}
 
   /// Sets a new token.
   ///
@@ -68,7 +72,7 @@ class TurnstileController extends ChangeNotifier
   ///
   /// This assigns a new ID to the current Turnstile widget instance.
   @override
-  set widgetId(String id) {
+  set widgetId(String? id) {
     if (_widgetId != id) {
       _widgetId = id;
       notifyListeners();
@@ -113,14 +117,8 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<void> refreshToken() async {
-    try {
-      await connector
-          .callMethod('eval', ['''turnstile.reset(`$_widgetId`);''']);
-      _token = null;
-    } catch (error) {
-      if (_onError == null) rethrow;
-      _onError?.call(TurnstileException('Failed to refresh token: $error'));
-    }
+    _resetWidget(_widgetId);
+    _token = null;
   }
 
   /// The function that check if a widget has expired.
@@ -138,12 +136,12 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<bool> isExpired() async {
-    if (!_isReady || _widgetId.isEmpty || token == null || token!.isEmpty) {
+    if (!_isReady || _widgetId == null || token == null || token!.isEmpty) {
       return true;
     }
-    final result = connector
-        .callMethod('eval', ['''turnstile.isExpired(`$_widgetId`);''']);
-    return Future.value(result as bool);
+
+    final expired = _isTokenExpired(_widgetId);
+    return Future.value(expired);
   }
 
   /// dispose resources

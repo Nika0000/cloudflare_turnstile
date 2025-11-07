@@ -3,7 +3,6 @@ import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller.dart';
-import 'package:cloudflare_turnstile/src/html_data.dart';
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
@@ -18,6 +17,119 @@ const String _tokenExpiredJSHandler =
     'window.flutter_inappwebview.callHandler(`TokenExpired`);';
 const String _widgetCreatedJSHandler =
     'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
+
+const String _source = """
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <link rel="icon" href="data:,">
+   <meta name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+
+   
+</head>
+
+<body>
+   <div id="cf-turnstile"></div>
+   <script>
+      turnstile.ready(function () {
+           if (!document.getElementById('cf-turnstile').hasChildNodes()) {
+               const widgetId = turnstile.render('#cf-turnstile', {
+                  sitekey: '<TURNSTILE_SITE_KEY>',
+                  action: '<TURNSTILE_ACTION>',
+                  cData: '<TURNSTILE_CDATA>',
+                  theme: '<TURNSTILE_THEME>',
+                  size: '<TURNSTILE_SIZE>',
+                  language: '<TURNSTILE_LANGUAGE>',
+                  retry: '<TURNSTILE_RETRY>',
+                  'retry-interval': parseInt('<TURNSTILE_RETRY_INTERVAL>'),
+                  'refresh-expired': '<TURNSTILE_REFRESH_EXPIRED>',
+                  'refresh-timeout': '<TURNSTILE_REFRESH_TIMEOUT>',
+                  'feedback-enabled': false,
+                  callback: function (token) {
+                     <TURNSTILE_TOKEN_RECIVED>
+                  },
+                  'error-callback': function (code) {
+                     <TURNSTILE_ERROR>
+                  },
+                  'expired-callback': function () {
+                     <TURNSTILE_TOKEN_EXPIRED>
+                  }
+               });
+
+               <TURNSTILE_CREATED>
+           }
+        });
+
+   </script>
+   <style>
+      * {
+         overflow: hidden;
+         margin: 0;
+         padding: 0;
+      }
+   </style>
+</body>
+
+</html>
+
+""";
+
+/// Turnstile view builder
+String buildHTML({
+  required String siteKey,
+  required TurnstileOptions options,
+  required String onTokenReceived,
+  required String onTurnstileError,
+  required String onTokenExpired,
+  required String onWidgetCreated,
+  String? action,
+  String? cData,
+}) {
+  final exp = RegExp(
+    '<TURNSTILE_(SITE_KEY|ACTION|CDATA|THEME|SIZE|LANGUAGE|RETRY|RETRY_INTERVAL|REFRESH_EXPIRED|REFRESH_TIMEOUT|READY|TOKEN_RECIVED|ERROR|TOKEN_EXPIRED|CREATED)>',
+  );
+
+  final replacedText = _source.replaceAllMapped(exp, (match) {
+    switch (match.group(1)) {
+      case 'SITE_KEY':
+        return siteKey;
+      case 'ACTION':
+        return action ?? '';
+      case 'CDATA':
+        return cData ?? '';
+      case 'THEME':
+        return options.theme.name;
+      case 'SIZE':
+        return options.size.name;
+      case 'LANGUAGE':
+        return options.language;
+      case 'RETRY':
+        return options.retryAutomatically ? 'auto' : 'never';
+      case 'RETRY_INTERVAL':
+        return options.retryInterval.inMilliseconds.toString();
+      case 'REFRESH_EXPIRED':
+        return options.refreshExpired.name;
+      case 'REFRESH_TIMEOUT':
+        return options.refreshTimeout.name;
+      case 'TOKEN_RECIVED':
+        return onTokenReceived;
+      case 'ERROR':
+        return onTurnstileError;
+      case 'TOKEN_EXPIRED':
+        return onTokenExpired;
+      case 'CREATED':
+        return onWidgetCreated;
+      default:
+        return match.group(0) ?? '';
+    }
+  });
+
+  return replacedText;
+}
 
 /// Cloudflare Turnstile mobile implementation
 class CloudflareTurnstile extends StatefulWidget
@@ -337,9 +449,12 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     super.initState();
 
     // Check if the platform is supported
-    if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
+    if (!(Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS)) {
       throw UnsupportedError(
-        'CloudflareTurnstile only supports Android, iOS and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS, Windows, Macos and Web platforms.',
       );
     }
 
@@ -349,7 +464,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       _setTurnstileTheme();
     });
 
-    data = htmlData(
+    data = buildHTML(
       siteKey: widget.siteKey,
       action: widget.action,
       cData: widget.cData,
@@ -566,25 +681,26 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     String? action,
     String? cData,
     TurnstileOptions? options,
-    i.OnTokenReceived? onTokenReceived,
-    i.OnTokenExpired? onTokenExpired,
+    super.onTokenReceived,
+    super.onTokenExpired,
   }) : super(
           siteKey: siteKey,
           controller: TurnstileController(),
-          onTokenReceived: onTokenReceived,
-          onTokenExpired: onTokenExpired,
         ) {
     // Check if the platform is supported
-    if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
+    if (!(Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS)) {
       throw UnsupportedError(
-        'CloudflareTurnstile only supports Android, iOS, MacOs and Web platforms.',
+        'CloudflareTurnstile only supports Android, iOS, Windows, Macos and Web platforms.',
       );
     }
 
     PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
     _completer = Completer<dynamic>();
 
-    final data = htmlData(
+    final data = buildHTML(
       siteKey: siteKey,
       action: action,
       cData: cData,

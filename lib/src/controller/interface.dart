@@ -13,7 +13,7 @@ abstract class TurnstileController<T> {
   /// Retrives the current widget ID.
   ///
   /// This ID is used to uniquely identify the Turnstile widget instance.
-  String get widgetId;
+  String? get widgetId;
 
   /// Retrieves the widget's ready state.
   ///
@@ -36,7 +36,7 @@ abstract class TurnstileController<T> {
   /// Sets the Turnstile widget ID.
   ///
   /// This assigns a new ID to the current Turnstile widget instance.
-  set widgetId(String id);
+  set widgetId(String? id);
 
   /// Sets the widget's ready state.
   ///

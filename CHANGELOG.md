@@ -1,7 +1,18 @@
+## 3.5.0
+* Added MacOS platform support.
+
+## 3.4.1
+* Code optimization and cleanup.
+
+## 3.4.0-beta
+
+* Fixed missing `baseUrl` paramter in the invisible Turnstile widget on web.
+* Migrated from the deprecated `js` package to `web` package for improved web compatibility.
+* Added Windows platform support.
+
 ## 3.2.1
 
 * Updated dependencies to latest version.
-
 
 ## 3.2.0
 

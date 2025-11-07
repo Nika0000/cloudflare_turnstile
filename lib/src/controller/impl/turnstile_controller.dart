@@ -16,7 +16,7 @@ class TurnstileController extends ChangeNotifier
 
   TurnstileException? _error;
 
-  String _widgetId = '';
+  String? _widgetId = '';
 
   bool _isReady = false;
 
@@ -30,7 +30,7 @@ class TurnstileController extends ChangeNotifier
   ///
   /// This ID is used to uniquely identify the Turnstile widget instance.
   @override
-  String get widgetId => _widgetId;
+  String? get widgetId => _widgetId;
 
   /// Retrieves the widget's ready state.
   ///
@@ -70,7 +70,7 @@ class TurnstileController extends ChangeNotifier
   ///
   /// This assigns a new ID to the current Turnstile widget instance.
   @override
-  set widgetId(String id) {
+  set widgetId(String? id) {
     if (_widgetId != id) {
       _widgetId = id;
       notifyListeners();
@@ -139,7 +139,7 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<bool> isExpired() async {
-    if (!_isReady || _widgetId.isEmpty || token == null || token!.isEmpty) {
+    if (!_isReady || _widgetId == null || token == null || token!.isEmpty) {
       return true;
     }
 
