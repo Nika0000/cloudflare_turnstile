@@ -24,6 +24,12 @@ typedef OnTokenExpired = void Function();
 /// internally by the Turnstile widget or handled differently.
 typedef OnError = Function(TurnstileException error);
 
+/// Callback invoked when the Turnstile widget fails to load within a timeout.
+///
+/// This can be used to trigger a fallback flow (e.g., enable an alternative
+/// verification method) if Cloudflare's script is unavailable or delayed.
+typedef OnTimeout = void Function();
+
 /// Abstract class representing a Cloudflare Turnstile widget.
 abstract class CloudflareTurnstile {
   /// Create a Cloudflare Turnstile Widget
@@ -41,6 +47,7 @@ abstract class CloudflareTurnstile {
     this.onTokenReceived,
     this.onTokenExpired,
     this.onError,
+    this.onTimeout,
   }) : options = options ?? TurnstileOptions();
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -122,6 +129,13 @@ abstract class CloudflareTurnstile {
   ///
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   final OnError? onError;
+
+  /// Callback invoked when the Turnstile widget fails to load in time.
+  ///
+  /// This is typically triggered if the Turnstile script cannot be loaded
+  /// due to a network issue or Cloudflare outage, allowing consumers to
+  /// handle a fallback flow.
+  final OnTimeout? onTimeout;
 
   /// Retrives the current token from the widget.
   ///
