@@ -146,6 +146,7 @@ class CloudflareTurnstile extends StatefulWidget
     this.onTokenReceived,
     this.onTokenExpired,
     this.onError,
+    this.onTimeout,
   }) : options = options ?? TurnstileOptions() {
     if (action != null) {
       assert(
@@ -272,6 +273,10 @@ class CloudflareTurnstile extends StatefulWidget
   @override
   final i.OnError? onError;
 
+  /// Called when the Turnstile script/widget fails to load within a timeout.
+  @override
+  final i.OnTimeout? onTimeout;
+
   @override
   State<CloudflareTurnstile> createState() => _CloudflareTurnstileState();
 
@@ -302,6 +307,7 @@ class CloudflareTurnstile extends StatefulWidget
     String baseUrl = 'http://localhost',
     i.OnTokenReceived? onTokenReceived,
     i.OnTokenExpired? onTokenExpired,
+    i.OnTimeout? onTimeout,
     TurnstileOptions? options,
   }) {
     return _TurnstileInvisible.init(
@@ -311,6 +317,7 @@ class CloudflareTurnstile extends StatefulWidget
       baseUrl: baseUrl,
       onTokenReceived: onTokenReceived,
       onTokenExpired: onTokenExpired,
+      onTimeout: onTimeout,
       options: options ?? TurnstileOptions(),
     );
   }
@@ -443,6 +450,8 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   bool _isWidgetReady = false;
   bool _isTurnstileLoaded = false;
   TurnstileException? _hasError;
+  bool _isRendered = false;
+  Timer? _scriptLoadTimer;
 
   @override
   void initState() {
@@ -510,6 +519,8 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
           if (!mounted) return;
           widgetId = args[0] as String;
           widget.controller?.widgetId = widgetId!;
+          _isRendered = true;
+          _scriptLoadTimer?.cancel();
         },
       )
       ..addJavaScriptHandler(
@@ -605,6 +616,13 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
 
       _isTurnstileLoaded = true;
       _ready(true);
+      _scriptLoadTimer?.cancel();
+      _scriptLoadTimer = Timer(const Duration(milliseconds: 8000), () {
+        if (!mounted) return;
+        if (!_isRendered) {
+          widget.onTimeout?.call();
+        }
+      });
     },
     onConsoleMessage: (controller, consoleMessage) {},
     onReceivedError: (controller, __, error) {
@@ -620,7 +638,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   @override
   void dispose() {
     super.dispose();
-    //  InAppWebViewController.clearAllCache();
+    //  
+    InAppWebViewController.clearAllCache();
+    _scriptLoadTimer?.cancel();
   }
 
   @override
@@ -683,6 +703,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     TurnstileOptions? options,
     super.onTokenReceived,
     super.onTokenExpired,
+    super.onTimeout,
   }) : super(
           siteKey: siteKey,
           controller: TurnstileController(),
@@ -743,6 +764,8 @@ class _TurnstileInvisible extends CloudflareTurnstile {
 
   late HeadlessInAppWebView _view;
   Completer<dynamic>? _completer;
+  bool _isRendered = false;
+  Timer? _scriptLoadTimer;
 
   void _createChannels(InAppWebViewController wController) {
     wController
@@ -772,6 +795,8 @@ class _TurnstileInvisible extends CloudflareTurnstile {
         handlerName: 'TurnstileWidgetId',
         callback: (args) {
           controller!.widgetId = args[0] as String;
+          _isRendered = true;
+          _scriptLoadTimer?.cancel();
         },
       )
       ..addJavaScriptHandler(
@@ -797,6 +822,13 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     if (token != null) {
       await controller!.refreshToken();
     }
+
+    _scriptLoadTimer?.cancel();
+    _scriptLoadTimer = Timer(const Duration(milliseconds: 8000), () {
+      if (!_isRendered) {
+        onTimeout?.call();
+      }
+    });
 
     return _completer!.future as Future<String?>;
   }
@@ -835,6 +867,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
 
   @override
   Future<void> dispose() async {
+    _scriptLoadTimer?.cancel();
     await _view.dispose();
   }
 }

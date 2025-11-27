@@ -24,6 +24,7 @@ class CloudflareTurnstile extends StatelessWidget
     this.onTokenReceived,
     this.onTokenExpired,
     this.onError,
+    this.onTimeout,
   }) : options = options ?? TurnstileOptions();
 
   /// Create a Cloudflare Turnstile invisible widget.
@@ -54,6 +55,7 @@ class CloudflareTurnstile extends StatelessWidget
     TurnstileOptions? options,
     i.OnTokenReceived? onTokenReceived,
     i.OnTokenExpired? onTokenExpired,
+    i.OnTimeout? onTimeout,
   }) {
     throw UnimplementedError(
         'Cannot call this method on the facade implementation of CloudflareTurnstile.');
@@ -142,6 +144,10 @@ class CloudflareTurnstile extends StatelessWidget
   /// Refer to [Client-side errors](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/).
   @override
   final i.OnError? onError;
+
+  /// Called when the Turnstile script/widget fails to load within a timeout.
+  @override
+  final i.OnTimeout? onTimeout;
 
   /// Retrives the current token from the widget.
   ///
