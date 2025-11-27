@@ -1,3 +1,6 @@
+## 3.6.0
+* Added timeout fallback for Cloudflare outage
+
 ## 3.5.0
 * Added MacOS platform support.
 
