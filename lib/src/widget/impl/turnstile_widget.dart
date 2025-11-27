@@ -498,7 +498,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     controller
       ..addJavaScriptHandler(
         handlerName: 'TurnstileToken',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (!mounted) return;
           final token = args[0] as String;
           widget.controller?.token = token;
@@ -507,7 +507,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileError',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (_hasError != null) return;
           final errorCode = int.tryParse(args[0] as String);
           _addError(TurnstileException.fromCode(errorCode ?? -1));
@@ -515,7 +515,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileWidgetId',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           if (!mounted) return;
           widgetId = args[0] as String;
           widget.controller?.widgetId = widgetId!;
@@ -525,7 +525,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       )
       ..addJavaScriptHandler(
         handlerName: 'TokenExpired',
-        callback: (message) {
+        callback: (List<dynamic> message) {
           if (!mounted) return;
           widget.onTokenExpired?.call();
         },
@@ -638,7 +638,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   @override
   void dispose() {
     super.dispose();
-    //  
+    //
     InAppWebViewController.clearAllCache();
     _scriptLoadTimer?.cancel();
   }
@@ -771,7 +771,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     wController
       ..addJavaScriptHandler(
         handlerName: 'TurnstileToken',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           final token = args[0] as String;
           controller?.token = token;
           onTokenReceived?.call(token);
@@ -782,7 +782,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileError',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           final errorCode = int.tryParse(args[0] as String);
           final error = TurnstileException.fromCode(errorCode ?? -1);
 
@@ -793,7 +793,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       )
       ..addJavaScriptHandler(
         handlerName: 'TurnstileWidgetId',
-        callback: (args) {
+        callback: (List<dynamic> args) {
           controller!.widgetId = args[0] as String;
           _isRendered = true;
           _scriptLoadTimer?.cancel();
@@ -801,7 +801,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       )
       ..addJavaScriptHandler(
         handlerName: 'TokenExpired',
-        callback: (message) {
+        callback: (List<dynamic> message) {
           // Handle token expiration logic here
           onTokenExpired?.call();
           if (!_completer!.isCompleted) {
