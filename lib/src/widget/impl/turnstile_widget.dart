@@ -518,7 +518,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
         callback: (List<dynamic> args) {
           if (!mounted) return;
           widgetId = args[0] as String;
-          widget.controller?.widgetId = widgetId!;
+          widget.controller?.widgetId = widgetId;
           _isRendered = true;
           _scriptLoadTimer?.cancel();
         },
@@ -638,8 +638,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   @override
   void dispose() {
     super.dispose();
-    //
-    InAppWebViewController.clearAllCache();
+    if (!Platform.isWindows) {
+      InAppWebViewController.clearAllCache();
+    }
     _scriptLoadTimer?.cancel();
   }
 

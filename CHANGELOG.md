@@ -1,3 +1,7 @@
+## 3.6.2
+* Fixed Windows widget lifecycle issues.
+* Fixed Web widget failing to render when navigating away and back.
+
 ## 3.6.0
 * Added timeout fallback for Cloudflare outage
 

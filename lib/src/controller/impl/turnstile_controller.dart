@@ -20,6 +20,8 @@ class TurnstileController extends ChangeNotifier
 
   bool _isReady = false;
 
+  bool _isDisposed = false;
+
   /// Retrives the current token from the widget.
   ///
   /// Returns `null` if no token is available.
@@ -115,6 +117,7 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<void> refreshToken() async {
+    if (_isDisposed) return;
     _token = null;
     if (!_isReady || _error != null) {
       await connector.reload();
@@ -139,7 +142,7 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<bool> isExpired() async {
-    if (!_isReady || _widgetId == null || token == null || token!.isEmpty) {
+    if (_isDisposed || !_isReady || _widgetId == null || token == null || token!.isEmpty) {
       return true;
     }
 
@@ -154,7 +157,9 @@ class TurnstileController extends ChangeNotifier
   /// dispose resources
   @override
   void dispose() {
-    connector.dispose();
+    _isDisposed = true;
+    _onError = null;
+    _onTokenReceived = null;
     super.dispose();
   }
 

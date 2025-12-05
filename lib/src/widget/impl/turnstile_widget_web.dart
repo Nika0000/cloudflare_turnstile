@@ -145,21 +145,6 @@ class CloudflareTurnstile extends StatefulWidget
           this.options.retryInterval.inMilliseconds <= 900000,
       'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
     );
-
-    /*   assert(
-      !(mode == i.TurnstileMode.invisible && this.options.refreshExpired == TurnstileRefreshExpired.manual),
-      '${this.options.refreshExpired} is impossible in $mode, consider using TurnstileRefreshExpired.auto or TurnstileRefreshExpired.never',
-    );
-
-    assert(
-      !(mode == i.TurnstileMode.invisible && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
-      '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    );
-
-    assert(
-      !(mode == i.TurnstileMode.nonInteractive && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
-      '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    ); */
   }
 
   /// Create a Cloudflare Turnstile invisible widget.
@@ -415,30 +400,32 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   bool _isWidgetReady = false;
   TurnstileException? _hasError;
   Timer? _scriptLoadTimer;
+  bool _isDisposed = false;
+  bool _viewCreated = false;
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setTurnstileTheme();
+      if (mounted) {
+        _setTurnstileTheme();
+      }
     });
 
     _widgetViewId = _createViewType();
     _turnstile = _DartTurnstile(
       onTokenReceived: (String token) {
+        if (_isDisposed) return;
         widget.onTokenReceived?.call(token);
         widget.controller?.token = token;
       },
-      onTokenExpired: widget.onTokenExpired,
-      onErrorCallback: _addError,
-      onLoaded: () {
-        widgetId = _renderWidget('.cf-turnstile_$_widgetViewId');
-        widget.controller?.widgetId = widgetId;
-        setState(() => _isWidgetReady = true);
-        widget.controller?.isWidgetReady = _isWidgetReady;
-        _scriptLoadTimer?.cancel();
+      onTokenExpired: () {
+        if (_isDisposed) return;
+        widget.onTokenExpired?.call();
       },
+      onErrorCallback: _addError,
+      onLoaded: _onTurnstileLoaded,
     );
 
     // Assign the Dart methods to the global JS object
@@ -471,6 +458,27 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     _registerView(_widgetViewId);
   }
 
+  void _onTurnstileLoaded() {
+    if (_isDisposed || !mounted) return;
+    // Only render if the view has been created in the DOM
+    if (_viewCreated) {
+      _renderTurnstileWidget();
+    }
+  }
+
+  void _renderTurnstileWidget() {
+    if (_isDisposed || !mounted) return;
+    if (widgetId != null) return; // Already rendered
+
+    widgetId = _renderWidget('.cf-turnstile_$_widgetViewId');
+    widget.controller?.widgetId = widgetId;
+    if (mounted) {
+      setState(() => _isWidgetReady = true);
+    }
+    widget.controller?.isWidgetReady = _isWidgetReady;
+    _scriptLoadTimer?.cancel();
+  }
+
   void _setTurnstileTheme() {
     if (widget.options.theme == TurnstileTheme.auto) {
       final brightness = MediaQuery.of(context).platformBrightness;
@@ -490,6 +498,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   }
 
   void _addError(TurnstileException error) {
+    if (_isDisposed || !mounted) return;
     setState(() {
       _hasError = error;
       _isWidgetReady = error.retryable;
@@ -503,20 +512,31 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     key: widget.key,
     viewType: _widgetViewId,
     onPlatformViewCreated: (id) {
+      _viewCreated = true;
       _scriptLoadTimer?.cancel();
       _scriptLoadTimer = Timer(const Duration(milliseconds: 8000), () {
-        if (!mounted) return;
+        if (_isDisposed || !mounted) return;
         if (!_isWidgetReady) {
           widget.onTimeout?.call();
         }
       });
-      _turnstile.loadScript();
+
+      // If script is already loaded, render the widget now
+      if (_turnstile.isScriptLoaded()) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _renderTurnstileWidget();
+        });
+      } else {
+        _turnstile.loadScript();
+      }
     },
   );
 
   @override
   void dispose() {
+    _isDisposed = true;
     _scriptLoadTimer?.cancel();
+    _scriptLoadTimer = null;
     _widget.remove();
     super.dispose();
   }
@@ -588,7 +608,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       onTokenReceived: (String token) {
         controller?.token = token;
         onTokenReceived?.call(token);
-        if (!_completer!.isCompleted) {
+        if (_completer != null && !_completer!.isCompleted) {
           _completer?.complete(token);
         }
       },
