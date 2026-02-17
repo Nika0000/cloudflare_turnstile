@@ -109,6 +109,9 @@ String _createViewType() {
 @JS('turnstile.render')
 external String? _renderWidget(String target);
 
+@JS('turnstile.remove')
+external void _removeWidget(String widgetId);
+
 /// Cloudflare Turnstile web implementation
 class CloudflareTurnstile extends StatefulWidget
     implements i.CloudflareTurnstile {
@@ -290,16 +293,16 @@ class CloudflareTurnstile extends StatefulWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -403,9 +406,22 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   bool _isDisposed = false;
   bool _viewCreated = false;
 
+  web.EventListener? _beforeUnloadListener;
+
   @override
   void initState() {
     super.initState();
+
+    // Clean up Turnstile widget on page refresh (F5)
+    // dispose() does not run on browser refresh, so we use beforeunload
+    _beforeUnloadListener = ((web.Event event) {
+      if (widgetId != null) {
+        try {
+          _removeWidget(widgetId!);
+        } catch (_) {}
+      }
+    }).toJS;
+    web.window.addEventListener('beforeunload', _beforeUnloadListener);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -431,22 +447,10 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     // Assign the Dart methods to the global JS object
     // Use 'globalContext' from dart:js_interop_unsafe
     globalContext
-      ..setProperty(
-        'onTokenReceived'.toJS,
-        _turnstile.onReceived.toJS,
-      )
-      ..setProperty(
-        'onTokenExpired'.toJS,
-        _turnstile.onExpired.toJS,
-      )
-      ..setProperty(
-        'onTurnstileError'.toJS,
-        _turnstile.onError.toJS,
-      )
-      ..setProperty(
-        'onTurnstileReady'.toJS,
-        _turnstile.onReady.toJS,
-      );
+      ..setProperty('onTokenReceived'.toJS, _turnstile.onReceived.toJS)
+      ..setProperty('onTokenExpired'.toJS, _turnstile.onExpired.toJS)
+      ..setProperty('onTurnstileError'.toJS, _turnstile.onError.toJS)
+      ..setProperty('onTurnstileReady'.toJS, _turnstile.onReady.toJS);
 
     _widget = _turnstile.buildWidget(
       siteKey: widget.siteKey,
@@ -466,11 +470,28 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     }
   }
 
+  int _renderRetryCount = 0;
+  static const int _maxRenderRetries = 10;
+
   void _renderTurnstileWidget() {
     if (_isDisposed || !mounted) return;
     if (widgetId != null) return; // Already rendered
 
-    widgetId = _renderWidget('.cf-turnstile_$_widgetViewId');
+    final selector = '.cf-turnstile_$_widgetViewId';
+    final element = web.document.querySelector(selector);
+
+    if (element == null) {
+      if (_renderRetryCount < _maxRenderRetries) {
+        _renderRetryCount++;
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _renderTurnstileWidget();
+        });
+      }
+      return;
+    }
+
+    _renderRetryCount = 0;
+    widgetId = _renderWidget(selector);
     widget.controller?.widgetId = widgetId;
     if (mounted) {
       setState(() => _isWidgetReady = true);
@@ -483,18 +504,19 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     if (widget.options.theme == TurnstileTheme.auto) {
       final brightness = MediaQuery.of(context).platformBrightness;
       final isDark = brightness == Brightness.dark;
-      widget.options.theme =
-          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      widget.options.theme = isDark
+          ? TurnstileTheme.dark
+          : TurnstileTheme.light;
     }
   }
 
   void _registerView(String viewType) {
-    ui.platformViewRegistry.registerViewFactory(
-      viewType,
-      (int viewId, {Object? params}) {
-        return _widget;
-      },
-    );
+    ui.platformViewRegistry.registerViewFactory(viewType, (
+      int viewId, {
+      Object? params,
+    }) {
+      return _widget;
+    });
   }
 
   void _addError(TurnstileException error) {
@@ -537,6 +559,14 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     _isDisposed = true;
     _scriptLoadTimer?.cancel();
     _scriptLoadTimer = null;
+    if (_beforeUnloadListener != null) {
+      web.window.removeEventListener('beforeunload', _beforeUnloadListener);
+    }
+    if (widgetId != null) {
+      try {
+        _removeWidget(widgetId!);
+      } catch (_) {}
+    }
     _widget.remove();
     super.dispose();
   }
@@ -551,8 +581,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     final secondaryColor = widget.options.theme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor =
-        _isWidgetReady ? secondaryColor : Colors.transparent;
+    final adaptiveBorderColor = _isWidgetReady
+        ? secondaryColor
+        : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
@@ -571,9 +602,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
           color: primaryColor,
           borderRadius: widget.options.borderRadius!.add(
             // add extra 1 px because border
-            const BorderRadius.all(
-              Radius.circular(1),
-            ),
+            const BorderRadius.all(Radius.circular(1)),
           ),
         ),
         clipBehavior: Clip.hardEdge,
@@ -596,9 +625,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     super.onTokenExpired,
     super.onTimeout,
     super.options,
-  }) : super(
-          controller: TurnstileController(),
-        ) {
+  }) : super(controller: TurnstileController()) {
     _register();
   }
 
@@ -632,22 +659,10 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     );
 
     globalContext
-      ..setProperty(
-        'onTokenReceived'.toJS,
-        turnstile.onReceived.toJS,
-      )
-      ..setProperty(
-        'onTokenExpired'.toJS,
-        turnstile.onExpired.toJS,
-      )
-      ..setProperty(
-        'onTurnstileError'.toJS,
-        turnstile.onError.toJS,
-      )
-      ..setProperty(
-        'onTurnstileReady'.toJS,
-        turnstile.onReady.toJS,
-      );
+      ..setProperty('onTokenReceived'.toJS, turnstile.onReceived.toJS)
+      ..setProperty('onTokenExpired'.toJS, turnstile.onExpired.toJS)
+      ..setProperty('onTurnstileError'.toJS, turnstile.onError.toJS)
+      ..setProperty('onTurnstileReady'.toJS, turnstile.onReady.toJS);
 
     _widget = turnstile.buildWidget(
       siteKey: siteKey,
