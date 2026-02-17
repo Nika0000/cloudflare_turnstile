@@ -3,13 +3,13 @@
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
-import 'dart:ui_web' as ui;
 
 import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_web.dart';
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:web/web.dart' as web;
 
 class _DartTurnstile {
@@ -393,10 +393,12 @@ class CloudflareTurnstile extends StatefulWidget
   }
 }
 
-class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
+class _CloudflareTurnstileState extends State<CloudflareTurnstile>
+    with WidgetsBindingObserver {
   late web.HTMLDivElement _widget;
   late String _widgetViewId;
   late _DartTurnstile _turnstile;
+  final GlobalKey _placeholderKey = GlobalKey();
 
   String? widgetId;
 
@@ -404,16 +406,16 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   TurnstileException? _hasError;
   Timer? _scriptLoadTimer;
   bool _isDisposed = false;
-  bool _viewCreated = false;
 
   web.EventListener? _beforeUnloadListener;
+  web.EventListener? _scrollListener;
+  web.EventListener? _resizeListener;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
-    // Clean up Turnstile widget on page refresh (F5)
-    // dispose() does not run on browser refresh, so we use beforeunload
     _beforeUnloadListener = ((web.Event event) {
       if (widgetId != null) {
         try {
@@ -444,8 +446,6 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       onLoaded: _onTurnstileLoaded,
     );
 
-    // Assign the Dart methods to the global JS object
-    // Use 'globalContext' from dart:js_interop_unsafe
     globalContext
       ..setProperty('onTokenReceived'.toJS, _turnstile.onReceived.toJS)
       ..setProperty('onTokenExpired'.toJS, _turnstile.onExpired.toJS)
@@ -459,15 +459,49 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       action: widget.action,
     )..className = 'cf-turnstile_$_widgetViewId';
 
-    _registerView(_widgetViewId);
+    // Bypass HtmlElementView: append directly to DOM for cross-browser support
+    _widget.style
+      ..position = 'fixed'
+      ..zIndex = '999'
+      ..pointerEvents = 'auto';
+    web.document.body?.append(_widget);
+
+    // Position overlay after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateOverlayPosition();
+      _loadTurnstileScript();
+    });
+
+    // Listen to scroll/resize to reposition
+    _scrollListener = ((web.Event _) {
+      _updateOverlayPosition();
+    }).toJS;
+    _resizeListener = ((web.Event _) {
+      _updateOverlayPosition();
+    }).toJS;
+    web.window.addEventListener('scroll', _scrollListener, true.toJS);
+    web.window.addEventListener('resize', _resizeListener);
+  }
+
+  void _loadTurnstileScript() {
+    _scriptLoadTimer?.cancel();
+    _scriptLoadTimer = Timer(const Duration(milliseconds: 8000), () {
+      if (_isDisposed || !mounted) return;
+      if (!_isWidgetReady) {
+        widget.onTimeout?.call();
+      }
+    });
+
+    if (_turnstile.isScriptLoaded()) {
+      _renderTurnstileWidget();
+    } else {
+      _turnstile.loadScript();
+    }
   }
 
   void _onTurnstileLoaded() {
     if (_isDisposed || !mounted) return;
-    // Only render if the view has been created in the DOM
-    if (_viewCreated) {
-      _renderTurnstileWidget();
-    }
+    _renderTurnstileWidget();
   }
 
   int _renderRetryCount = 0;
@@ -475,7 +509,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
 
   void _renderTurnstileWidget() {
     if (_isDisposed || !mounted) return;
-    if (widgetId != null) return; // Already rendered
+    if (widgetId != null) return;
 
     final selector = '.cf-turnstile_$_widgetViewId';
     final element = web.document.querySelector(selector);
@@ -500,6 +534,28 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     _scriptLoadTimer?.cancel();
   }
 
+  void _updateOverlayPosition() {
+    if (_isDisposed) return;
+    final renderObject = _placeholderKey.currentContext?.findRenderObject();
+    if (renderObject == null ||
+        renderObject is! RenderBox ||
+        !renderObject.attached) {
+      // Widget not visible, hide overlay
+      _widget.style.display = 'none';
+      return;
+    }
+
+    final position = renderObject.localToGlobal(Offset.zero);
+    final size = renderObject.size;
+
+    _widget.style
+      ..display = ''
+      ..left = '${position.dx}px'
+      ..top = '${position.dy}px'
+      ..width = '${size.width}px'
+      ..height = '${size.height}px';
+  }
+
   void _setTurnstileTheme() {
     if (widget.options.theme == TurnstileTheme.auto) {
       final brightness = MediaQuery.of(context).platformBrightness;
@@ -507,15 +563,6 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       widget.options.theme =
           isDark ? TurnstileTheme.dark : TurnstileTheme.light;
     }
-  }
-
-  void _registerView(String viewType) {
-    ui.platformViewRegistry.registerViewFactory(viewType, (
-      int viewId, {
-      Object? params,
-    }) {
-      return _widget;
-    });
   }
 
   void _addError(TurnstileException error) {
@@ -529,37 +576,25 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     });
   }
 
-  late final Widget _view = HtmlElementView(
-    key: widget.key,
-    viewType: _widgetViewId,
-    onPlatformViewCreated: (id) {
-      _viewCreated = true;
-      _scriptLoadTimer?.cancel();
-      _scriptLoadTimer = Timer(const Duration(milliseconds: 8000), () {
-        if (_isDisposed || !mounted) return;
-        if (!_isWidgetReady) {
-          widget.onTimeout?.call();
-        }
-      });
-
-      // If script is already loaded, render the widget now
-      if (_turnstile.isScriptLoaded()) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _renderTurnstileWidget();
-        });
-      } else {
-        _turnstile.loadScript();
-      }
-    },
-  );
+  @override
+  void didChangeMetrics() {
+    _updateOverlayPosition();
+  }
 
   @override
   void dispose() {
     _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _scriptLoadTimer?.cancel();
     _scriptLoadTimer = null;
     if (_beforeUnloadListener != null) {
       web.window.removeEventListener('beforeunload', _beforeUnloadListener);
+    }
+    if (_scrollListener != null) {
+      web.window.removeEventListener('scroll', _scrollListener, true.toJS);
+    }
+    if (_resizeListener != null) {
+      web.window.removeEventListener('resize', _resizeListener);
     }
     if (widgetId != null) {
       try {
@@ -574,43 +609,23 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   Widget build(BuildContext context) {
     _setTurnstileTheme();
 
-    final primaryColor = widget.options.theme == TurnstileTheme.light
-        ? const Color(0xFFFAFAFA)
-        : const Color(0xFF232323);
-    final secondaryColor = widget.options.theme == TurnstileTheme.light
-        ? const Color(0xFFDEDEDE)
-        : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor =
-        _isWidgetReady ? secondaryColor : Colors.transparent;
+    // Schedule position update after each build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateOverlayPosition();
+    });
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
-    final turnstileWidget = Visibility(
+    return Visibility(
       visible: _hasError == null || isErrorResolvable,
-      child: AnimatedOpacity(
-        opacity: _isWidgetReady ? 1.0 : 0.0,
-        duration: widget.options.animationDuration!,
-        curve: widget.options.curves!,
-        child: Container(
-          width: widget.options.size.width,
-          height: widget.options.size.height,
-          foregroundDecoration: BoxDecoration(
-            border: Border.all(color: adaptiveBorderColor),
-            borderRadius: widget.options.borderRadius,
-          ),
-          decoration: BoxDecoration(
-            color: primaryColor,
-            borderRadius: widget.options.borderRadius!.add(
-              const BorderRadius.all(Radius.circular(1)),
-            ),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: _view,
-        ),
+      child: SizedBox(
+        key: _placeholderKey,
+        width: widget.options.size == TurnstileSize.flexible
+            ? double.infinity
+            : widget.options.size.width,
+        height: widget.options.size.height,
       ),
     );
-
-    return turnstileWidget;
   }
 }
 
