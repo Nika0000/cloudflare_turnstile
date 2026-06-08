@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  push:
+    branches: [legacy]
+  pull_request:
+    branches: [legacy]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: flutter analyze --no-fatal-warnings
+
+      - run: flutter test
