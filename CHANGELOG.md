@@ -1,3 +1,7 @@
+## 3.7.0
+* Enhanced `TurnstileOptions` immutability and centralized validations.
+* Decoupled controller interface for improved flexibility.
+
 ## 3.6.2
 * Fixed Windows widget lifecycle issues.
 * Fixed Web widget failing to render when navigating away and back.
