@@ -25,7 +25,10 @@ class TurnstileValidator {
     // Validate siteKey (must not be empty).
     if (siteKey.isEmpty) {
       throw ArgumentError.value(
-          siteKey, 'siteKey', 'Site key cannot be empty.');
+        siteKey,
+        'siteKey',
+        'Site key cannot be empty.',
+      );
     }
 
     // Validate action.

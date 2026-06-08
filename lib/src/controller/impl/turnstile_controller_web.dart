@@ -14,7 +14,6 @@ external void _resetWidget([String? widgetId]);
 /// Turnstile controller web implementation.
 class TurnstileController extends ChangeNotifier
     implements i.TurnstileController {
-
   String? _token;
 
   TurnstileException? _error;

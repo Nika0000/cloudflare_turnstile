@@ -584,7 +584,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
           dev.log(
             'Widget mode mismatch: The current widget is Invisible, which may'
             ' not match the mode set in the Cloudflare Turnstile dashboard.'
-            'Please verify the widget mode in the Cloudflare dashboard settings.',
+            ' Please verify the widget mode in the Cloudflare dashboard settings.',
             name: 'cloudflare_turnstile',
             level: 800,
           );
