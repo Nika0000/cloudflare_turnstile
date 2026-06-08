@@ -7,10 +7,9 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 /// Turnstile controller mobile implementation.
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<InAppWebViewController> {
+    implements i.TurnstileController {
   /// The connector associated with the controller.
-  @override
-  late InAppWebViewController connector;
+  late InAppWebViewController _connector;
 
   String? _token;
 
@@ -47,9 +46,8 @@ class TurnstileController extends ChangeNotifier
   TurnstileException? get error => _error;
 
   /// Sets a new connector.
-  @override
   void setConnector(InAppWebViewController newConnector) {
-    connector = newConnector;
+    _connector = newConnector;
   }
 
   /// Sets a new token.
@@ -120,10 +118,10 @@ class TurnstileController extends ChangeNotifier
     if (_isDisposed) return;
     _token = null;
     if (!_isReady || _error != null) {
-      await connector.reload();
+      await _connector.reload();
       return;
     }
-    await connector
+    await _connector
         .evaluateJavascript(source: '''turnstile.reset(`$_widgetId`);''');
   }
 
@@ -142,11 +140,15 @@ class TurnstileController extends ChangeNotifier
   /// ```
   @override
   Future<bool> isExpired() async {
-    if (_isDisposed || !_isReady || _widgetId == null || token == null || token!.isEmpty) {
+    if (_isDisposed ||
+        !_isReady ||
+        _widgetId == null ||
+        token == null ||
+        token!.isEmpty) {
       return true;
     }
 
-    final result = await connector.evaluateJavascript(
+    final result = await _connector.evaluateJavascript(
       source: '''turnstile.isExpired(`$_widgetId`);''',
     );
 

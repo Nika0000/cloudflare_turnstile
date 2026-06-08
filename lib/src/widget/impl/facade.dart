@@ -96,7 +96,7 @@ class CloudflareTurnstile extends StatelessWidget
 
   /// A controller for managing interactions with the Turnstile widget.
   @override
-  final TurnstileController<dynamic>? controller;
+  final TurnstileController? controller;
 
   /// A Callback invoked upon success of the challange.
   /// The callback is passed a `token` that can be validated.
