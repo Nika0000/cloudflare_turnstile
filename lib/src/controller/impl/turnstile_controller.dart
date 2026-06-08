@@ -121,8 +121,9 @@ class TurnstileController extends ChangeNotifier
       await _connector.reload();
       return;
     }
-    await _connector
-        .evaluateJavascript(source: '''turnstile.reset(`$_widgetId`);''');
+    await _connector.evaluateJavascript(
+      source: '''turnstile.reset(`$_widgetId`);''',
+    );
   }
 
   /// The function that check if a widget has expired.

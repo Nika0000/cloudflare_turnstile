@@ -74,9 +74,7 @@ void main() {
       expect(
         () => TurnstileValidator.validate(
           siteKey: '3x00000000000000000000FF',
-          options: TurnstileOptions(
-            retryInterval: Duration.zero,
-          ),
+          options: TurnstileOptions(retryInterval: Duration.zero),
         ),
         throwsArgumentError,
       );

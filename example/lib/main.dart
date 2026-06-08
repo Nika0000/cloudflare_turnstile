@@ -205,10 +205,7 @@ class _VisibleTurnstilePageState extends State<VisibleTurnstilePage> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
           const SizedBox(height: 4),
           Text(
@@ -275,9 +272,9 @@ class _InvisibleTurnstilePageState extends State<InvisibleTurnstilePage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -298,8 +295,11 @@ class _InvisibleTurnstilePageState extends State<InvisibleTurnstilePage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Center(
-                  child:
-                      Icon(Icons.visibility_off, size: 64, color: Colors.blue),
+                  child: Icon(
+                    Icons.visibility_off,
+                    size: 64,
+                    color: Colors.blue,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Center(
@@ -409,10 +409,7 @@ class _InvisibleTurnstilePageState extends State<InvisibleTurnstilePage> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
           const SizedBox(height: 4),
           Text(

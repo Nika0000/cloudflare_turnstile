@@ -58,7 +58,8 @@ class CloudflareTurnstile extends StatelessWidget
     i.OnTimeout? onTimeout,
   }) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -154,14 +155,16 @@ class CloudflareTurnstile extends StatelessWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-      'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+    'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+  );
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-      'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+    'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+  );
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -184,7 +187,8 @@ class CloudflareTurnstile extends StatelessWidget
   @override
   Future<void> refresh({bool forceRefresh = true}) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 
   /// This function starts a Cloudflare Turnstile challenge and returns token
@@ -207,7 +211,8 @@ class CloudflareTurnstile extends StatelessWidget
   @override
   Future<String?> getToken() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 
   /// The function that check if a widget has expired.
@@ -233,7 +238,8 @@ class CloudflareTurnstile extends StatelessWidget
   @override
   Future<bool> isExpired() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 
   /// Dispose invisible Turnstile widget.
@@ -244,12 +250,14 @@ class CloudflareTurnstile extends StatelessWidget
   @override
   Future<void> dispose() {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     throw UnimplementedError(
-        'Cannot call this method on the facade implementation of CloudflareTurnstile.');
+      'Cannot call this method on the facade implementation of CloudflareTurnstile.',
+    );
   }
 }
