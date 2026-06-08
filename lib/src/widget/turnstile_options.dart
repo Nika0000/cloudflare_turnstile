@@ -106,10 +106,7 @@ enum TurnstileSize {
   flexible(double.maxFinite, 65);
 
   /// Creates a [TurnstileSize] with the specified [width] and [height].
-  const TurnstileSize(
-    this.width,
-    this.height,
-  );
+  const TurnstileSize(this.width, this.height);
 
   /// The width of the widget.
   final double width;

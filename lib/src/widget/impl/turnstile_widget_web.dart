@@ -278,16 +278,16 @@ class CloudflareTurnstile extends StatefulWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -420,22 +420,10 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     // Assign the Dart methods to the global JS object
     // Use 'globalContext' from dart:js_interop_unsafe
     globalContext
-      ..setProperty(
-        'onTokenReceived'.toJS,
-        _turnstile.onReceived.toJS,
-      )
-      ..setProperty(
-        'onTokenExpired'.toJS,
-        _turnstile.onExpired.toJS,
-      )
-      ..setProperty(
-        'onTurnstileError'.toJS,
-        _turnstile.onError.toJS,
-      )
-      ..setProperty(
-        'onTurnstileReady'.toJS,
-        _turnstile.onReady.toJS,
-      );
+      ..setProperty('onTokenReceived'.toJS, _turnstile.onReceived.toJS)
+      ..setProperty('onTokenExpired'.toJS, _turnstile.onExpired.toJS)
+      ..setProperty('onTurnstileError'.toJS, _turnstile.onError.toJS)
+      ..setProperty('onTurnstileReady'.toJS, _turnstile.onReady.toJS);
 
     _widget = _turnstile.buildWidget(
       siteKey: widget.siteKey,
@@ -479,12 +467,12 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   }
 
   void _registerView(String viewType) {
-    ui.platformViewRegistry.registerViewFactory(
-      viewType,
-      (int viewId, {Object? params}) {
-        return _widget;
-      },
-    );
+    ui.platformViewRegistry.registerViewFactory(viewType, (
+      int viewId, {
+      Object? params,
+    }) {
+      return _widget;
+    });
   }
 
   void _addError(TurnstileException error) {
@@ -541,8 +529,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     final secondaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor =
-        _isWidgetReady ? secondaryColor : Colors.transparent;
+    final adaptiveBorderColor = _isWidgetReady
+        ? secondaryColor
+        : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
@@ -561,9 +550,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
           color: primaryColor,
           borderRadius: widget.options.borderRadius!.add(
             // add extra 1 px because border
-            const BorderRadius.all(
-              Radius.circular(1),
-            ),
+            const BorderRadius.all(Radius.circular(1)),
           ),
         ),
         clipBehavior: Clip.hardEdge,
@@ -586,9 +573,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     super.onTokenExpired,
     super.onTimeout,
     super.options,
-  }) : super(
-          controller: TurnstileController(),
-        ) {
+  }) : super(controller: TurnstileController()) {
     _register();
   }
 
@@ -622,22 +607,10 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     );
 
     globalContext
-      ..setProperty(
-        'onTokenReceived'.toJS,
-        turnstile.onReceived.toJS,
-      )
-      ..setProperty(
-        'onTokenExpired'.toJS,
-        turnstile.onExpired.toJS,
-      )
-      ..setProperty(
-        'onTurnstileError'.toJS,
-        turnstile.onError.toJS,
-      )
-      ..setProperty(
-        'onTurnstileReady'.toJS,
-        turnstile.onReady.toJS,
-      );
+      ..setProperty('onTokenReceived'.toJS, turnstile.onReceived.toJS)
+      ..setProperty('onTokenExpired'.toJS, turnstile.onExpired.toJS)
+      ..setProperty('onTurnstileError'.toJS, turnstile.onError.toJS)
+      ..setProperty('onTurnstileReady'.toJS, turnstile.onReady.toJS);
 
     _widget = turnstile.buildWidget(
       siteKey: siteKey,

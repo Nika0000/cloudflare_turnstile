@@ -300,16 +300,16 @@ class CloudflareTurnstile extends StatefulWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-        'This function cannot be called in interactive widget mode.',
-      );
+    'This function cannot be called in interactive widget mode.',
+  );
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -628,8 +628,9 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     final secondaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor =
-        _isWidgetReady ? secondaryColor : Colors.transparent;
+    final adaptiveBorderColor = _isWidgetReady
+        ? secondaryColor
+        : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
@@ -653,18 +654,14 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
           clipBehavior: Clip.hardEdge,
           borderRadius: widget.options.borderRadius!.add(
             // add extra 1 px because border
-            const BorderRadius.all(
-              Radius.circular(1),
-            ),
+            const BorderRadius.all(Radius.circular(1)),
           ),
           child: _view,
         ),
       ),
     );
 
-    return Wrap(
-      children: [turnstileWidget],
-    );
+    return Wrap(children: [turnstileWidget]);
   }
 }
 
@@ -679,10 +676,7 @@ class _TurnstileInvisible extends CloudflareTurnstile {
     super.onTokenReceived,
     super.onTokenExpired,
     super.onTimeout,
-  }) : super(
-          siteKey: siteKey,
-          controller: TurnstileController(),
-        ) {
+  }) : super(siteKey: siteKey, controller: TurnstileController()) {
     // Check if the platform is supported
     if (!(Platform.isAndroid ||
         Platform.isIOS ||
