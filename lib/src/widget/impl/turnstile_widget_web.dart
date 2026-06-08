@@ -9,6 +9,7 @@ import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller_we
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
+import 'package:cloudflare_turnstile/src/widget/turnstile_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
@@ -126,24 +127,11 @@ class CloudflareTurnstile extends StatefulWidget
     this.onError,
     this.onTimeout,
   }) : options = options ?? TurnstileOptions() {
-    if (action != null) {
-      assert(
-        action!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(action!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-
-    if (cData != null) {
-      assert(
-        cData!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(cData!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-
-    assert(
-      this.options.retryInterval.inMilliseconds > 0 &&
-          this.options.retryInterval.inMilliseconds <= 900000,
-      'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
+    TurnstileValidator.validate(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      options: this.options,
     );
   }
 
@@ -394,6 +382,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   late web.HTMLDivElement _widget;
   late String _widgetViewId;
   late _DartTurnstile _turnstile;
+  late TurnstileTheme _resolvedTheme;
 
   String? widgetId;
 
@@ -409,7 +398,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _setTurnstileTheme();
+        _setReslovedTheme();
       }
     });
 
@@ -479,12 +468,13 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     _scriptLoadTimer?.cancel();
   }
 
-  void _setTurnstileTheme() {
+  void _setReslovedTheme() {
     if (widget.options.theme == TurnstileTheme.auto) {
-      final brightness = MediaQuery.of(context).platformBrightness;
+      final brightness = MediaQuery.platformBrightnessOf(context);
       final isDark = brightness == Brightness.dark;
-      widget.options.theme =
-          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      _resolvedTheme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+    } else {
+      _resolvedTheme = widget.options.theme;
     }
   }
 
@@ -543,12 +533,12 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
 
   @override
   Widget build(BuildContext context) {
-    _setTurnstileTheme();
+    _setReslovedTheme();
 
-    final primaryColor = widget.options.theme == TurnstileTheme.light
+    final primaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFFAFAFA)
         : const Color(0xFF232323);
-    final secondaryColor = widget.options.theme == TurnstileTheme.light
+    final secondaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
     final adaptiveBorderColor =

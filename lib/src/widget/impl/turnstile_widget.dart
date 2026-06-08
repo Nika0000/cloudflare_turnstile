@@ -6,6 +6,7 @@ import 'package:cloudflare_turnstile/src/controller/impl/turnstile_controller.da
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:cloudflare_turnstile/src/widget/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/widget/turnstile_options.dart';
+import 'package:cloudflare_turnstile/src/widget/turnstile_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -29,7 +30,7 @@ const String _source = """
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
 
-   
+
 </head>
 
 <body>
@@ -148,40 +149,12 @@ class CloudflareTurnstile extends StatefulWidget
     this.onError,
     this.onTimeout,
   }) : options = options ?? TurnstileOptions() {
-    if (action != null) {
-      assert(
-        action!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(action!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-
-    if (cData != null) {
-      assert(
-        cData!.length <= 32 && RegExp(r'^[a-zA-Z0-9_-]*$').hasMatch(cData!),
-        'action must be contain up to 32 characters including _ and -.',
-      );
-    }
-
-    assert(
-      this.options.retryInterval.inMilliseconds > 0 &&
-          this.options.retryInterval.inMilliseconds <= 900000,
-      'Duration must be greater than 0 and less than or equal to 900000 milliseconds.',
+    TurnstileValidator.validate(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      options: this.options,
     );
-
-    /*   assert(
-      !(mode == i.TurnstileMode.invisible && this.options.refreshExpired == TurnstileRefreshExpired.manual),
-      '${this.options.refreshExpired} is impossible in $mode, consider using TurnstileRefreshExpired.auto or TurnstileRefreshExpired.never',
-    );
-
-    assert(
-      !(mode == i.TurnstileMode.invisible && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
-      '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    ); */
-/* 
-    assert(
-      !(mode == i.TurnstileMode.nonInteractive && this.options.refreshTimeout != TurnstileRefreshTimeout.auto),
-      '${this.options.refreshTimeout} has no effect on an $mode widget.',
-    ); */
   }
 
   /// This [siteKey] is associated with the corresponding widget configuration
@@ -429,8 +402,11 @@ class CloudflareTurnstile extends StatefulWidget
 
 class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   final GlobalKey webViewKey = GlobalKey();
+  late TurnstileTheme _resolvedTheme;
 
   final InAppWebViewSettings _settings = InAppWebViewSettings(
+    /// Disbling caching for this webview instance
+    cacheMode: CacheMode.LOAD_NO_CACHE,
     disableHorizontalScroll: true,
     verticalScrollBarEnabled: false,
     transparentBackground: true,
@@ -470,7 +446,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setTurnstileTheme();
+      _setReslovedTheme();
     });
 
     data = buildHTML(
@@ -485,12 +461,13 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     );
   }
 
-  void _setTurnstileTheme() {
+  void _setReslovedTheme() {
     if (widget.options.theme == TurnstileTheme.auto) {
-      final brightness = MediaQuery.of(context).platformBrightness;
+      final brightness = MediaQuery.platformBrightnessOf(context);
       final isDark = brightness == Brightness.dark;
-      widget.options.theme =
-          isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+      _resolvedTheme = isDark ? TurnstileTheme.dark : TurnstileTheme.light;
+    } else {
+      _resolvedTheme = widget.options.theme;
     }
   }
 
@@ -638,20 +615,17 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   @override
   void dispose() {
     super.dispose();
-    if (!Platform.isWindows) {
-      InAppWebViewController.clearAllCache();
-    }
     _scriptLoadTimer?.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
-    _setTurnstileTheme();
+    _setReslovedTheme();
 
-    final primaryColor = widget.options.theme == TurnstileTheme.light
+    final primaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFFAFAFA)
         : const Color(0xFF232323);
-    final secondaryColor = widget.options.theme == TurnstileTheme.light
+    final secondaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
     final adaptiveBorderColor =

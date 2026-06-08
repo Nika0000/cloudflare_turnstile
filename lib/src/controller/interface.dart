@@ -1,10 +1,7 @@
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 
 /// Interface for the Turnstile Controller.
-abstract class TurnstileController<T> {
-  /// The connector associated with this controller.
-  late T connector;
-
+abstract class TurnstileController {
   /// Retrives the current token from the widget.
   ///
   /// Returns `null` if no token is available.
@@ -24,9 +21,6 @@ abstract class TurnstileController<T> {
   ///
   /// Returns a [TurnstileException] object if an error exists, otherwise `null`
   TurnstileException? get error;
-
-  /// Sets a new connector.
-  void setConnector(T newConnector);
 
   /// Sets a new token.
   ///

@@ -13,10 +13,7 @@ external void _resetWidget([String? widgetId]);
 
 /// Turnstile controller web implementation.
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<dynamic> {
-  /// The connector associated with the controller.
-  @override
-  late dynamic connector;
+    implements i.TurnstileController {
 
   String? _token;
 
@@ -49,10 +46,6 @@ class TurnstileController extends ChangeNotifier
   /// Returns a [TurnstileException] object if an error exists, otherwise `null`
   @override
   TurnstileException? get error => _error;
-
-  /// Sets a new connector.
-  @override
-  void setConnector(dynamic newConnector) {}
 
   /// Sets a new token.
   ///

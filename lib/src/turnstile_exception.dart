@@ -48,19 +48,17 @@ class TurnstileException implements Exception {
     var errorType = TurnstileError.UNKNOWN;
 
     switch (code) {
-      case var _ when code >= 100000 && code < 102000:
+      case >= 100000 && < 102000:
         errorType = TurnstileError.INITIALIZATION_PROBLEM;
         message =
             'There was a problem initializing Turnstile before a challenge could be started.';
-      case var _ when code >= 102000 && code < 103000:
-      case var _ when code >= 103000 && code < 104000:
-      case var _ when code >= 104000 && code < 105000:
-      case var _ when code >= 106000 && code < 107000:
+      case >= 102000 && < 105000:
+      case >= 106000 && < 107000:
         retryable = true;
         errorType = TurnstileError.INVALID_PARAMETERS;
         message =
             'The visitor sent an invalid parameter as part of the challenge towards Turnstile.';
-      case var _ when code >= 105000 && code < 106000:
+      case >= 105000 && < 106000:
         errorType = TurnstileError.TURNSTILE_API_COMPATIBILITY;
         message = 'Turnstile was invoked in a deprecated or invalid way.';
       case 110100:
@@ -87,17 +85,17 @@ class TurnstileException implements Exception {
         errorType = TurnstileError.INCONSISTENT_USER_AGENT;
         message =
             'The visitor provided an inconsistent user-agent throughout the process of solving Turnstile.';
-      case var _ when code >= 110600 && code < 110620:
+      case >= 110600 && < 110620:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_TIMED_OUT;
         message =
             'The visitor took too long to solve the challenge and the challenge timed out.';
-      case var _ when code >= 110620 && code < 120000:
+      case >= 110620 && < 120000:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_TIMED_OUT_VISIBLE;
         message =
             'The visitor took too long to solve the interactive challenge and the challenge became outdated.';
-      case var _ when code >= 120000 && code < 200010:
+      case >= 120000 && < 200010:
         errorType = TurnstileError.INTERNAL_ERROR;
         message = 'Internal Errors for Cloudflare Employees.';
       case 200010:
@@ -106,16 +104,16 @@ class TurnstileException implements Exception {
       case 200100:
         errorType = TurnstileError.TIME_PROBLEM;
         message = 'The visitor’s clock is incorrect.';
-      case var _ when code >= 300000 && code < 301000:
+      case >= 300000 && < 301000:
         retryable = true;
         errorType = TurnstileError.GENERIC_CLIENT_EXECUTION;
         message =
             'An unspecified error occurred in the visitor while they were solving a challenge.';
-      case var _ when code >= 400000 && code < 401000:
+      case >= 400000 && < 401000:
         errorType = TurnstileError.INCORRECT_CONFIGURATION;
         message =
             'The configuration for Turnstile is incorrect or incomplete. Check the site key, secret key, and domain setup.';
-      case var _ when code >= 600000 && code < 601000:
+      case >= 600000 && < 601000:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_EXECUTIION_FAILURE;
         message =

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 class TurnstileOptions {
   /// Create a Cloudflare Turnstile Options configuration.
   TurnstileOptions({
-    this.size = TurnstileSize.normal,
     this.theme = TurnstileTheme.auto,
+    this.size = TurnstileSize.normal,
     this.language = 'auto',
     this.retryInterval = const Duration(milliseconds: 8000),
     this.retryAutomatically = true,
@@ -36,7 +36,7 @@ class TurnstileOptions {
   /// Defaults to [TurnstileTheme.auto], which automatically adjusts based on
   /// the device's brightness setting. Can also be set to [TurnstileTheme.dark]
   /// or [TurnstileTheme.light].
-  TurnstileTheme theme;
+  final TurnstileTheme theme;
 
   /// Whether the widget should automatically retry obtaining a token if
   /// the challenge fails.

@@ -5,22 +5,12 @@ import 'package:flutter/material.dart';
 
 /// Facade class
 class TurnstileController extends ChangeNotifier
-    implements i.TurnstileController<dynamic> {
-  /// The connector associated with this controller.
-  @override
-  late dynamic connector;
-
+    implements i.TurnstileController {
   /// Retrives the current token from the widget.
   ///
   /// Returns `null` if no token is available.
   @override
   String? get token {
-    throw UnimplementedError('Cannot call this function on the facade.');
-  }
-
-  /// Sets a new connector.
-  @override
-  void setConnector(dynamic newConnector) {
     throw UnimplementedError('Cannot call this function on the facade.');
   }
 
