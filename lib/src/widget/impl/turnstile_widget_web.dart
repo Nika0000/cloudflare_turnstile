@@ -110,6 +110,9 @@ String _createViewType() {
 @JS('turnstile.render')
 external String? _renderWidget(String target);
 
+@JS('turnstile.remove')
+external void _removeWidget(String widgetId);
+
 /// Cloudflare Turnstile web implementation
 class CloudflareTurnstile extends StatefulWidget
     implements i.CloudflareTurnstile {
@@ -391,10 +394,20 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   Timer? _scriptLoadTimer;
   bool _isDisposed = false;
   bool _viewCreated = false;
+  web.EventListener? _beforeUnloadListener;
 
   @override
   void initState() {
     super.initState();
+
+    _beforeUnloadListener = ((web.Event event) {
+      if (widgetId != null) {
+        try {
+          _removeWidget(widgetId!);
+        } catch (_) {}
+      }
+    }).toJS;
+    web.window.addEventListener('beforeunload', _beforeUnloadListener);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -455,11 +468,30 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     }
   }
 
+  int _renderRetryCount = 0;
+  static const int _maxRenderRetries = 10;
+
   void _renderTurnstileWidget() {
     if (_isDisposed || !mounted) return;
     if (widgetId != null) return; // Already rendered
 
-    widgetId = _renderWidget('.cf-turnstile_$_widgetViewId');
+    final selector = '.cf-turnstile_$_widgetViewId';
+    final element = web.document.querySelector(selector);
+
+    if (element == null) {
+      if (_renderRetryCount < _maxRenderRetries) {
+        _renderRetryCount++;
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!_isDisposed && mounted) {
+            _renderTurnstileWidget();
+          }
+        });
+      }
+      return;
+    }
+
+    _renderRetryCount = 0;
+    widgetId = _renderWidget(selector);
     widget.controller?.widgetId = widgetId;
     if (mounted) {
       setState(() => _isWidgetReady = true);
@@ -527,6 +559,14 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     _isDisposed = true;
     _scriptLoadTimer?.cancel();
     _scriptLoadTimer = null;
+    if (_beforeUnloadListener != null) {
+      web.window.removeEventListener('beforeunload', _beforeUnloadListener);
+    }
+    if (widgetId != null) {
+      try {
+        _removeWidget(widgetId!);
+      } catch (_) {}
+    }
     _widget.remove();
     super.dispose();
   }
