@@ -46,6 +46,7 @@ class TurnstileController extends ChangeNotifier
   TurnstileException? get error => _error;
 
   /// Sets a new connector.
+  // ignore: use_setters_to_change_properties
   void setConnector(InAppWebViewController newConnector) {
     _connector = newConnector;
   }
