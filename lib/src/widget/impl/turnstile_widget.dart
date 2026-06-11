@@ -157,6 +157,48 @@ class CloudflareTurnstile extends StatefulWidget
     );
   }
 
+  /// Create a Cloudflare Turnstile invisible widget.
+  ///
+  /// [siteKey] - A Cloudflare Turnstile sitekey.
+  /// It`s likely generated or obtained from the Cloudflare dashboard.
+  ///
+  /// [action] - A customer value that can be used to differentiate widgets under
+  /// the some sitekey in analytics and witch is returned upon validation.
+  ///
+  /// [cData] - A customer payload that can be used to attach customer data to the
+  /// challenge throughout its issuance and which is returned upon validation.
+  ///
+  /// [baseUrl] - A website url corresponding current turnstile widget.
+  ///
+  /// [options] - Configuration options for the Turnstile widget.
+  ///
+  /// [onTokenReceived] - A Callback invoked upon success of the challange.
+  /// The callback is passed a `token` that can be validated.
+  ///
+  /// [onTokenExpired] - A Callback invoke when the token expires and does not
+  /// reset the widget.
+  factory CloudflareTurnstile.invisible({
+    required String siteKey,
+    String? action,
+    String? cData,
+    String baseUrl = 'http://localhost',
+    i.OnTokenReceived? onTokenReceived,
+    i.OnTokenExpired? onTokenExpired,
+    i.OnTimeout? onTimeout,
+    TurnstileOptions? options,
+  }) {
+    return _TurnstileInvisible.init(
+      siteKey: siteKey,
+      action: action,
+      cData: cData,
+      baseUrl: baseUrl,
+      onTokenReceived: onTokenReceived,
+      onTokenExpired: onTokenExpired,
+      onTimeout: onTimeout,
+      options: options ?? TurnstileOptions(),
+    );
+  }
+
   /// This [siteKey] is associated with the corresponding widget configuration
   /// and is created upon the widget creation.
   ///
@@ -252,48 +294,6 @@ class CloudflareTurnstile extends StatefulWidget
 
   @override
   State<CloudflareTurnstile> createState() => _CloudflareTurnstileState();
-
-  /// Create a Cloudflare Turnstile invisible widget.
-  ///
-  /// [siteKey] - A Cloudflare Turnstile sitekey.
-  /// It`s likely generated or obtained from the Cloudflare dashboard.
-  ///
-  /// [action] - A customer value that can be used to differentiate widgets under
-  /// the some sitekey in analytics and witch is returned upon validation.
-  ///
-  /// [cData] - A customer payload that can be used to attach customer data to the
-  /// challenge throughout its issuance and which is returned upon validation.
-  ///
-  /// [baseUrl] - A website url corresponding current turnstile widget.
-  ///
-  /// [options] - Configuration options for the Turnstile widget.
-  ///
-  /// [onTokenReceived] - A Callback invoked upon success of the challange.
-  /// The callback is passed a `token` that can be validated.
-  ///
-  /// [onTokenExpired] - A Callback invoke when the token expires and does not
-  /// reset the widget.
-  factory CloudflareTurnstile.invisible({
-    required String siteKey,
-    String? action,
-    String? cData,
-    String baseUrl = 'http://localhost',
-    i.OnTokenReceived? onTokenReceived,
-    i.OnTokenExpired? onTokenExpired,
-    i.OnTimeout? onTimeout,
-    TurnstileOptions? options,
-  }) {
-    return _TurnstileInvisible.init(
-      siteKey: siteKey,
-      action: action,
-      cData: cData,
-      baseUrl: baseUrl,
-      onTokenReceived: onTokenReceived,
-      onTokenExpired: onTokenExpired,
-      onTimeout: onTimeout,
-      options: options ?? TurnstileOptions(),
-    );
-  }
 
   /// Retrives the current token from the widget.
   ///
