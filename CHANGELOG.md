@@ -1,3 +1,7 @@
+## 3.7.1
+* Fixed widget failing to render on page refresh.
+* Fixed analyze lint violations.
+
 ## 3.7.0
 * Enhanced `TurnstileOptions` immutability and centralized validations.
 * Decoupled controller interface for improved flexibility.
