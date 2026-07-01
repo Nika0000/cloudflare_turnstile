@@ -1,3 +1,7 @@
+## 3.7.2
+* Fixed non-main-frame WebView errors being incorrectly surfaced.
+* Fixed Android example project Kotlin/Java JVM target mismatch.
+
 ## 3.7.1
 * Fixed widget failing to render on page refresh.
 * Fixed analyze lint violations.
