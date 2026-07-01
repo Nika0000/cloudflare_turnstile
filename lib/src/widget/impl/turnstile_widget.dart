@@ -602,7 +602,10 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
       });
     },
     onConsoleMessage: (controller, consoleMessage) {},
-    onReceivedError: (controller, __, error) {
+    onReceivedError: (controller, request, error) {
+      if (request.isForMainFrame == false) {
+        return;
+      }
       if (error.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
         return;
       }
@@ -718,7 +721,10 @@ class _TurnstileInvisible extends CloudflareTurnstile {
         controller?.isWidgetReady = true;
       },
       onConsoleMessage: (_, __) {},
-      onReceivedError: (_, __, error) {
+      onReceivedError: (_, request, error) {
+        if (request.isForMainFrame == false) {
+          return;
+        }
         if (error.type == WebResourceErrorType.CANNOT_CONNECT_TO_HOST) {
           return;
         }
