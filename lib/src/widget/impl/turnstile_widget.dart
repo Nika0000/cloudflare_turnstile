@@ -28,6 +28,8 @@ const String _source = """
    <link rel="icon" href="data:,">
    <meta name="viewport"
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+   <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' data:; script-src 'self' data: https://challenges.cloudflare.com 'unsafe-inline'; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; style-src 'self' data: 'unsafe-inline';">
    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
 
 
@@ -300,16 +302,16 @@ class CloudflareTurnstile extends StatefulWidget
   /// Returns `null` if no token is available.
   @override
   String? get token => throw UnimplementedError(
-    'This function cannot be called in interactive widget mode.',
-  );
+        'This function cannot be called in interactive widget mode.',
+      );
 
   /// Retrives the current widget id.
   ///
   /// This `id` is used to uniquely identify the Turnstile widget instance.
   @override
   String? get id => throw UnimplementedError(
-    'This function cannot be called in interactive widget mode.',
-  );
+        'This function cannot be called in interactive widget mode.',
+      );
 
   /// The function can be called when widget mey become expired and
   /// needs to be refreshed otherwise, it will start a new challenge.
@@ -404,9 +406,10 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
   final GlobalKey webViewKey = GlobalKey();
   late TurnstileTheme _resolvedTheme;
 
-  final InAppWebViewSettings _settings = InAppWebViewSettings(
+  late final InAppWebViewSettings _settings = InAppWebViewSettings(
     /// Disbling caching for this webview instance
     cacheMode: CacheMode.LOAD_NO_CACHE,
+    sharedCookiesEnabled: true,
     disableHorizontalScroll: true,
     verticalScrollBarEnabled: false,
     transparentBackground: true,
@@ -417,6 +420,7 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     disableDefaultErrorPage: true,
     disableContextMenu: true,
     disableLongPressContextMenuOnLinks: true,
+    hardwareAcceleration: widget.options.hardwareAcceleration,
   );
 
   late String data;
@@ -631,9 +635,8 @@ class _CloudflareTurnstileState extends State<CloudflareTurnstile> {
     final secondaryColor = _resolvedTheme == TurnstileTheme.light
         ? const Color(0xFFDEDEDE)
         : const Color(0xFF9A9A9A);
-    final adaptiveBorderColor = _isWidgetReady
-        ? secondaryColor
-        : Colors.transparent;
+    final adaptiveBorderColor =
+        _isWidgetReady ? secondaryColor : Colors.transparent;
 
     final isErrorResolvable = _hasError != null && _hasError!.retryable == true;
 
@@ -708,6 +711,9 @@ class _TurnstileInvisible extends CloudflareTurnstile {
       initialData: InAppWebViewInitialData(
         data: data,
         baseUrl: WebUri(baseUrl),
+      ),
+      initialSettings: InAppWebViewSettings(
+        hardwareAcceleration: options.hardwareAcceleration,
       ),
       onWebViewCreated: (wController) {
         controller?.setConnector(wController);

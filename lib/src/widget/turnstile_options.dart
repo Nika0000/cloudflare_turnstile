@@ -14,6 +14,7 @@ class TurnstileOptions {
     this.borderRadius = const BorderRadius.all(Radius.circular(4)),
     this.animationDuration = const Duration(milliseconds: 500),
     this.curves = Curves.linearToEaseOut,
+    this.hardwareAcceleration = true,
   });
 
   /// The widget size.
@@ -86,6 +87,12 @@ class TurnstileOptions {
   /// This allows for different animation styles during the display
   /// The default is [Curves.linearToEaseOut].
   final Curve? curves;
+
+  /// Whether the underlying WebView should use hardware acceleration.
+  ///
+  /// Android-only. Set to `false` to disable hardware acceleration for the WebView
+  /// The default value is `true`
+  final bool hardwareAcceleration;
 }
 
 /// Defines the sizes for the Cloudflare Turnstile widget.
