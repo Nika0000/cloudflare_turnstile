@@ -1,3 +1,6 @@
+## 3.8.0
+* Added `hardwareAcceleration` option to `TurnstileOptions` to allow disabling WebView hardware acceleration on Android.
+
 ## 3.7.2
 * Fixed non-main-frame WebView errors being incorrectly surfaced.
 * Fixed Android example project Kotlin/Java JVM target mismatch.
