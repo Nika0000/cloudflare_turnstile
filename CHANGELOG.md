@@ -1,3 +1,6 @@
+## 3.8.1
+* Fixed visible widget never disposing its `InAppWebViewKeepAlive` instance, leaking native WebView resources.
+
 ## 3.8.0
 * Added `hardwareAcceleration` option to `TurnstileOptions` to allow disabling WebView hardware acceleration on Android.
 
