@@ -18,8 +18,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_inappwebview: ^6.1.5
   web: ^1.1.1
+  zikzak_inappwebview: ^4.7.0
 
 dev_dependencies:
   flutter_test:
