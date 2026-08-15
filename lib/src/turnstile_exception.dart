@@ -50,51 +50,43 @@ class TurnstileException implements Exception {
     switch (code) {
       case >= 100000 && < 102000:
         errorType = TurnstileError.INITIALIZATION_PROBLEM;
-        message =
-            'There was a problem initializing Turnstile before a challenge could be started.';
+        message = 'There was a problem initializing Turnstile before a challenge could be started.';
       case >= 102000 && < 105000:
       case >= 106000 && < 107000:
         retryable = true;
         errorType = TurnstileError.INVALID_PARAMETERS;
-        message =
-            'The visitor sent an invalid parameter as part of the challenge towards Turnstile.';
+        message = 'The visitor sent an invalid parameter as part of the challenge towards Turnstile.';
       case >= 105000 && < 106000:
         errorType = TurnstileError.TURNSTILE_API_COMPATIBILITY;
         message = 'Turnstile was invoked in a deprecated or invalid way.';
       case 110100:
       case 110110:
         errorType = TurnstileError.INVALID_SITEKEY;
-        message =
-            'Turnstile was invoked with an invalid sitekey or a sitekey that is no longer active.';
+        message = 'Turnstile was invoked with an invalid sitekey or a sitekey that is no longer active.';
       case 110200:
         retryable = true;
         errorType = TurnstileError.UNKNOWN_DOMAIN;
         message = 'Domain not allowed.';
       case 110420:
         errorType = TurnstileError.INVALID_ACTION;
-        message =
-            'This error occurs when an unsupported or incorrectly formatted action is submitted.';
+        message = 'This error occurs when an unsupported or incorrectly formatted action is submitted.';
       case 110430:
         errorType = TurnstileError.INVALID_CDATA;
-        message =
-            'This error in Turnstile refers to an issue encountered when processing Custom Data (cData). This error occurs when the cData provided does not adhere to the expected format or contains invalid characters.';
+        message = 'This error in Turnstile refers to an issue encountered when processing Custom Data (cData). This error occurs when the cData provided does not adhere to the expected format or contains invalid characters.';
       case 110500:
         errorType = TurnstileError.UNSUPPORTED_BROWSER;
         message = 'The visitor is using an unsupported browser.';
       case 110510:
         errorType = TurnstileError.INCONSISTENT_USER_AGENT;
-        message =
-            'The visitor provided an inconsistent user-agent throughout the process of solving Turnstile.';
+        message = 'The visitor provided an inconsistent user-agent throughout the process of solving Turnstile.';
       case >= 110600 && < 110620:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_TIMED_OUT;
-        message =
-            'The visitor took too long to solve the challenge and the challenge timed out.';
+        message = 'The visitor took too long to solve the challenge and the challenge timed out.';
       case >= 110620 && < 120000:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_TIMED_OUT_VISIBLE;
-        message =
-            'The visitor took too long to solve the interactive challenge and the challenge became outdated.';
+        message = 'The visitor took too long to solve the interactive challenge and the challenge became outdated.';
       case >= 120000 && < 200010:
         errorType = TurnstileError.INTERNAL_ERROR;
         message = 'Internal Errors for Cloudflare Employees.';
@@ -107,17 +99,14 @@ class TurnstileException implements Exception {
       case >= 300000 && < 301000:
         retryable = true;
         errorType = TurnstileError.GENERIC_CLIENT_EXECUTION;
-        message =
-            'An unspecified error occurred in the visitor while they were solving a challenge.';
+        message = 'An unspecified error occurred in the visitor while they were solving a challenge.';
       case >= 400000 && < 401000:
         errorType = TurnstileError.INCORRECT_CONFIGURATION;
-        message =
-            'The configuration for Turnstile is incorrect or incomplete. Check the site key, secret key, and domain setup.';
+        message = 'The configuration for Turnstile is incorrect or incomplete. Check the site key, secret key, and domain setup.';
       case >= 600000 && < 601000:
         retryable = true;
         errorType = TurnstileError.CHALLANGE_EXECUTIION_FAILURE;
-        message =
-            'A visitor failed to solve a Turnstile Challenge. Also used by failing testing sitekey.';
+        message = 'A visitor failed to solve a Turnstile Challenge. Also used by failing testing sitekey.';
     }
 
     return TurnstileException(
