@@ -3,7 +3,7 @@
 import 'package:cloudflare_turnstile/src/controller/interface.dart' as i;
 import 'package:cloudflare_turnstile/src/turnstile_exception.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:zikzak_inappwebview/zikzak_inappwebview.dart';
 
 /// Turnstile controller mobile implementation.
 class TurnstileController extends ChangeNotifier
