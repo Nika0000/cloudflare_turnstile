@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:zikzak_inappwebview/zikzak_inappwebview.dart';
 
 const String _tokenReceivedJSHandler =
-    'window.flutter_inappwebview.callHandler(`TurnstileToken`, token);';
+    'window.zikzak_inappwebview.callHandler(`TurnstileToken`, token);';
 const String _errorJSHandler =
-    'window.flutter_inappwebview.callHandler(`TurnstileError`, code);';
+    'window.zikzak_inappwebview.callHandler(`TurnstileError`, code);';
 const String _tokenExpiredJSHandler =
-    'window.flutter_inappwebview.callHandler(`TokenExpired`);';
+    'window.zikzak_inappwebview.callHandler(`TokenExpired`);';
 const String _widgetCreatedJSHandler =
-    'window.flutter_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
+    'window.zikzak_inappwebview.callHandler(`TurnstileWidgetId`, widgetId);';
 
 const String _source = """
 <!DOCTYPE html>
