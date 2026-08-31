@@ -19,7 +19,7 @@ dependencies:
     sdk: flutter
 
   web: ^1.1.1
-  zikzak_inappwebview: ^4.7.0
+  zikzak_inappwebview: ">=4.7.0 <6.0.0"
 
 dev_dependencies:
   flutter_test:
